@@ -3,9 +3,9 @@
 #include <stdint.h>
 #include <stivale2.h>
 #include <Bitmap.hpp>
-#include <constants.h>
-#include <memory/Paging.h>
-#include <strings.h>
+#include <constants.hpp>
+#include <memory/Paging.hpp>
+#include <strings.hpp>
 
 class PhysicalMemoryAllocator {
     public:

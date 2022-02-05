@@ -1,1 +1,1 @@
-lib/PSF.o: src/graphics/fonts/PSF.cpp include/PSF.h
+lib/PSF.o: src/graphics/fonts/PSF.cpp include/PSF.hpp

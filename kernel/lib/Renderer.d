@@ -1,2 +1,2 @@
-lib/Renderer.o: src/graphics/Renderer.cpp include/Renderer.h \
- include/stivale2.h include/PSF.h include/strings.h
+lib/Renderer.o: src/graphics/Renderer.cpp include/Renderer.hpp \
+ include/stivale2.h include/PSF.hpp include/strings.hpp

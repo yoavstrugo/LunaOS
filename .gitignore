@@ -1,5 +1,7 @@
-kernel/bin
-kernel/lib
+kernel/bin/*
+kernel/lib/*
 OVMF
 ./build
 .vscode
+kernel/lib/Renderer.o
+kernel/lib/PSF.d

@@ -1,8 +1,8 @@
 #pragma once
 
 #include <stdint.h>
-#include <types.h>
-#include <constants.h>
+#include <types.hpp>
+#include <constants.hpp>
 
 class Bitmap {
     public:

@@ -82,7 +82,7 @@ void PhysicalMemoryAllocator::mapMemory(stivale2_struct_tag_memmap *memmapStruct
 
     // Calculate the address
     physic_address bitmapAddress = bitmapPage * PAGE_SIZE;
-    memset((char *)physic_address, 0, bitmapSize);
+    memset((char *)bitmapAddress, 0, bitmapSize);
 
     // Copy the temp array to the location
     memcpy((void *)bitmapAddress, (void *)tempArr, bitmapSize);

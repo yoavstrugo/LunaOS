@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <stivale2.h>
-#include <types.h>
+#include <types.hpp>
 
 // Some constants to be use
 #define PAGE_SIZE   4096        // The size of a page (in bytes)

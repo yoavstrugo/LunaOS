@@ -1,4 +1,4 @@
-lib/kernel.o: src/kernel.cpp include/stivale2.h include/strings.h \
- include/Renderer.h include/PSF.h \
+lib/kernel.o: src/kernel.cpp include/stivale2.h include/strings.hpp \
+ include/Renderer.hpp include/PSF.hpp \
  include/memory/PhysicalMemoryAllocator.hpp include/Bitmap.hpp \
- include/types.h include/constants.h include/memory/Paging.h
+ include/types.hpp include/constants.hpp include/memory/Paging.hpp

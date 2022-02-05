@@ -1,9 +1,9 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stivale2.h>
-#include <strings.h>
-#include <Renderer.h>
-#include <PSF.h>
+#include <strings.hpp>
+#include <Renderer.hpp>
+#include <PSF.hpp>
 #include <memory/PhysicalMemoryAllocator.hpp>
 
 // We need to tell the stivale bootloader where we want our stack to be.

@@ -2,9 +2,9 @@
 
 #include <stivale2.h>
 #include <stdint.h>
-#include <PSF.h>
+#include <PSF.hpp>
 #include <stdarg.h>
-#include <strings.h>
+#include <strings.hpp>
 
 struct Point {
     int X, Y;

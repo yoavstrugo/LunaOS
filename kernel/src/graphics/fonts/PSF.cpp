@@ -1,4 +1,4 @@
-#include "PSF.h"
+#include <PSF.hpp>
 
 PSF_Font::PSF_Font(void *start_addr, void *end_addr) {
     this->_start_addr = start_addr;

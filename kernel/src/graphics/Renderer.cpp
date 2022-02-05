@@ -1,4 +1,4 @@
-#include "Renderer.h"
+#include <Renderer.hpp>
 
 #define PIXEL uint32_t   /* pixel pointer */
 #define TABSIZE 4
