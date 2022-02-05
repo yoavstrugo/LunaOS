@@ -4,6 +4,7 @@
 #include <strings.h>
 #include <Renderer.h>
 #include <PSF.h>
+#include <memory/PhysicalMemoryAllocator.hpp>
 
 // We need to tell the stivale bootloader where we want our stack to be.
 // We are going to allocate our stack as an array in .bss.
@@ -121,31 +122,6 @@ stivale2_module *stivale2_get_module(stivale2_struct_tag_modules *modules_struct
 
 // The following will be our kernel's entry point.
 extern "C" void _start(struct stivale2_struct *stivale2_struct) {
-      // Let's get the terminal structure tag from the bootloader.
-    stivale2_struct_tag_terminal *term_str_tag;
-    term_str_tag = (stivale2_struct_tag_terminal *)stivale2_get_tag(stivale2_struct, STIVALE2_STRUCT_TAG_TERMINAL_ID);
- 
-    // // Check if the tag was actually found.
-    // if (term_str_tag == NULL) {
-    //     // It wasn't found, just hang...
-    //     for (;;) {
-    //         asm ("hlt");
-    //     }
-    // }
- 
-    // Let's get the address of the terminal write function.
-    // void *term_write_ptr = (void *)term_str_tag->term_write;
- 
-    // // Now, let's assign this pointer to a function pointer which
-    // // matches the prototype described in the stivale2 specification for
-    // // the stivale2_term_write function.
-    // void (*term_write)(const char *string, size_t length) = (void (*)(const char *, size_t))term_write_ptr;
- 
-    // // We should now be able to call the above function pointer to print out
-    // // a simple "Hello World" to screen.
-    // term_write("Hello World", 11);
- 
-
     stivale2_struct_tag_framebuffer *framebuffer = (stivale2_struct_tag_framebuffer *)stivale2_get_tag(stivale2_struct, STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID);
 
     stivale2_struct_tag_modules *modules = (stivale2_struct_tag_modules *)stivale2_get_tag(stivale2_struct, STIVALE2_STRUCT_TAG_MODULES_ID);
@@ -154,8 +130,17 @@ extern "C" void _start(struct stivale2_struct *stivale2_struct) {
     PSF_Font font = PSF_Font((void *)font_module->begin, (void *)font_module->end);
     Renderer renderer = Renderer(framebuffer, &font);
 
-    //const char *str = toString(12);
-    renderer.printf("Hey Gitai!");
+    stivale2_struct_tag_memmap *memmap_struct = (stivale2_struct_tag_memmap *)stivale2_get_tag(stivale2_struct, STIVALE2_STRUCT_TAG_MEMMAP_ID);
+
+    if (memmap_struct != NULL) renderer.printf("Found the memap struct!\n");
+
+    PhysicalMemoryAllocator allocator;
+    allocator.mapMemory(memmap_struct);
+
+    renderer.printf("Total memory: %d MiB\n",     allocator.totalMemory() / (1024 * 1024));
+    renderer.printf("Free memory: %d MiB\n",      allocator.freeMemory() / (1024 * 1024));
+    renderer.printf("Used memory: %d MiB\n",      allocator.usedMemory() / (1024 * 1024));
+    renderer.printf("Reserved memory: %d MiB\n",  allocator.reservedMemory() / (1024 * 1024));
 
     // We're done, just hang...
     for (;;) {

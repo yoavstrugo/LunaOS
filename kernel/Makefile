@@ -16,13 +16,14 @@ LD := ld
 endif
 
 vpath %.cpp $(sort $(dir $(shell find ./src -type f -name '*')))
-vpath %.h include
-vpath %.o lib
-vpath %.d lib
+vpath %.h 	include
+vpath %.hpp include
+vpath %.o 	lib
+vpath %.d 	lib
 vpath %.elf bin
 
 .SUFFIXES:
-.SUFFIXES: .cpp .h .o .d .elf
+.SUFFIXES: .cpp .h .hpp .o .d .elf
 
 SRCDIR          = src
 INCLUDESDIR     = include

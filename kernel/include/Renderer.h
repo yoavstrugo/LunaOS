@@ -23,7 +23,7 @@ class Renderer {
         stivale2_struct_tag_framebuffer* framebuffer;
         PSF_Font *font;
         Point cursor;
-        void _advanceCursor();
+        void _advance_cursor();
         void _moveCursorDown();
         void _print(const char *str);
 

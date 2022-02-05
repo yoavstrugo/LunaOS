@@ -47,6 +47,7 @@ void Renderer::printf(const char *format, ...) {
             case 'x':
                 i = va_arg(arg, uint64_t);
                 _print(toHex((uint64_t)i, true));
+                break;
             default:
                 i = va_arg(arg, uint64_t);
                 if (!strncmp((const char *)traverse, "8x", 2)) {
@@ -81,7 +82,7 @@ void Renderer::_print(const char *str) {
     }
 }
 
-void Renderer::_advanceCursor() {
+void Renderer::_advance_cursor() {
     this->cursor.X += this->font->header()->width;
     if (this->cursor.X >= this->framebuffer->framebuffer_width) {
         this->cursor.X = 0;
@@ -95,21 +96,16 @@ void Renderer::putchar(unsigned short int c) {
         case '\n':
             // New line
             this->cursor.Y += this->font->header()->height;
+            this->cursor.X = 0;
             return;
         case '\t':
             // Horizontal tab
-            for (int i = 0; i < TABSIZE; i++) this->_advanceCursor();
-            return;
-        case '\v':
-
-        case '\r':
-            // Carriage return
-            this->cursor.X = 0;
+            for (int i = 0; i < TABSIZE; i++) this->_advance_cursor();
             return;
     }
 
     this->_insert_char(c, this->cursor.X, this->cursor.Y, 0xFFFFFF, 0x000000);
-    this->_advanceCursor();
+    this->_advance_cursor();
 }
 
 void Renderer::_insert_char (
@@ -165,12 +161,3 @@ void Renderer::_insert_char (
         initial_offset += this->framebuffer->framebuffer_width * sizeof(PIXEL);
     }
 }
-
-
-// line 00110110000 &
-// mask 0000000000 
-
-// glyph 1000000001100001
-// glyph << 8 0110000100000000
-// glyph >> 8 0000000010000000
-// total 

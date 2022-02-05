@@ -6,7 +6,7 @@ make all -f /home/yoavstrugo/Desktop/OSProject Remake/kernel/Makefile --print-da
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Thu Feb  3 06:39:01 2022
+# Make data base, printed on Sat Feb  5 05:30:10 2022
 
 # Variables
 
@@ -27,7 +27,7 @@ SNAP_INSTANCE_KEY =
 # environment
 GJS_DEBUG_OUTPUT = stderr
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-579c0c61-ea64-46f9-9f2a-a230a1a066bb.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-ff214592-f6e4-43fa-9aed-3364bffcf299.sock
 # environment
 VSCODE_CWD = /home/yoavstrugo
 # default
@@ -39,7 +39,7 @@ QT_ACCESSIBILITY = 1
 # environment
 SNAP_INSTANCE_NAME = code
 # environment
-GDK_PIXBUF_MODULEDIR = /snap/code/85/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders
+GDK_PIXBUF_MODULEDIR = /snap/code/86/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders
 # environment
 VSCODE_HANDLES_UNCAUGHT_ERRORS = true
 # default
@@ -57,7 +57,7 @@ VSCODE_LOG_STACK = false
 # automatic
 %F = $(notdir $%)
 # environment
-VSCODE_CODE_CACHE_PATH = /home/yoavstrugo/.config/Code/CachedData/899d46d82c4c95423fb7e10e68eba52050e30ba3
+VSCODE_CODE_CACHE_PATH = /home/yoavstrugo/.config/Code/CachedData/5554b12acf27056905806867f251c859323ff7e9
 # environment
 LANG = C
 # environment
@@ -75,7 +75,7 @@ CURDIR := /home/yoavstrugo/Desktop/OSProject Remake/kernel
 # environment
 VSCODE_PIPE_LOGGING = true
 # environment
-APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = true
+APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = 1
 # environment
 LESSOPEN = | /usr/bin/lesspipe %s
 # makefile (from '/home/yoavstrugo/Desktop/OSProject Remake/kernel/Makefile', line 66)
@@ -107,7 +107,7 @@ SNAP_REEXEC =
 # environment
 VSCODE_VERBOSE_LOGGING = true
 # environment
-VSCODE_PID = 139422
+VSCODE_PID = 168949
 # environment
 XDG_SESSION_TYPE = wayland
 # automatic
@@ -163,11 +163,11 @@ INTERNALCFLAGS := -I include -std=c++98 -ffreestanding -fno-stack-protector -fno
 # environment
 SNAP_USER_COMMON = /home/yoavstrugo/snap/code/common
 # environment
-SNAP = /snap/code/85
+SNAP = /snap/code/86
 # environment
 INVOCATION_ID = 408ea7d3ab1547e3a1d4e29efd35a847
 # environment
-SNAP_REVISION = 85
+SNAP_REVISION = 86
 # environment
 SNAP_REAL_HOME = /home/yoavstrugo
 # environment
@@ -215,7 +215,7 @@ MAKE_VERSION := 4.3
 # environment
 DISABLE_WAYLAND = 1
 # environment
-SNAP_DATA = /var/snap/code/85
+SNAP_DATA = /var/snap/code/86
 # environment
 SNAP_CONTEXT = Jx3YxSbVNll43HzE7fqtmQd0EDTpt75Trl1jfQllrReEdRh74mTB
 # makefile (from '/home/yoavstrugo/Desktop/OSProject Remake/kernel/Makefile', line 36)
@@ -223,11 +223,11 @@ LDFLAGS =
 # environment
 MANAGERPID = 1733
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 139377
+GIO_LAUNCHED_DESKTOP_FILE_PID = 168902
 # makefile (from '/home/yoavstrugo/Desktop/OSProject Remake/kernel/Makefile', line 28)
 INCLUDESDIR = include
 # environment
-_ = /snap/code/85/usr/share/code/code
+_ = /snap/code/86/usr/share/code/code
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # makefile (from '/home/yoavstrugo/Desktop/OSProject Remake/kernel/Makefile', line 33)
@@ -247,11 +247,11 @@ QT_IM_MODULE = ibus
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-VSCODE_IPC_HOOK = /run/user/1000/vscode-73100d7f-1.63.2-main.sock
+VSCODE_IPC_HOOK = /run/user/1000/vscode-73100d7f-1.64.0-main.sock
 # environment
 SNAP_NAME = code
 # environment
-GSETTINGS_SCHEMA_DIR = /snap/code/85/usr/share/glib-2.0/schemas
+GSETTINGS_SCHEMA_DIR = /snap/code/86/usr/share/glib-2.0/schemas
 # makefile (from '/home/yoavstrugo/Desktop/OSProject Remake/kernel/Makefile', line 27)
 SRCDIR = src
 # environment
@@ -261,7 +261,7 @@ IM_CONFIG_PHASE = 1
 # automatic
 <F = $(notdir $<)
 # environment
-SNAP_VERSION = 899d46d8
+SNAP_VERSION = 5554b12a
 # 'override' directive (from '/home/yoavstrugo/Desktop/OSProject Remake/kernel/Makefile', line 58)
 INTERNALLDFLAGS := -I include -T kernel.ld -nostdlib -zmax-page-size=0x1000 -static
 # default
@@ -278,7 +278,7 @@ SNAP_COMMON = /var/snap/code/common
 BUILDDIR = bin
 # environment
  
-SNAP_USER_DATA = /home/yoavstrugo/snap/code/85
+SNAP_USER_DATA = /home/yoavstrugo/snap/code/86
 # environment
 XDG_MENU_PREFIX = gnome-
 # environment
@@ -298,12 +298,13 @@ SNAP_LIBRARY_PATH = /var/lib/snapd/lib/gl:/var/lib/snapd/lib/gl32:/var/lib/snapd
 # include (device 2051, inode 1058843): 6 files, no impossibilities so far.
 # . (device 2051, inode 1049800): 11 files, no impossibilities.
 # ./src/graphics/fonts (device 2051, inode 1445066): No files, no impossibilities so far.
+# ./src/memory (device 2051, inode 1573137): No files, no impossibilities so far.
 # ./src/graphics (device 2051, inode 1445065): No files, no impossibilities so far.
 # ./src (device 2051, inode 1312609): 1 files, no impossibilities so far.
-# bin (device 2051, inode 1051321): 3 files, no impossibilities.
-# lib (device 2051, inode 1058884): 2 files, no impossibilities.
+# bin (device 2051, inode 1051321): 4 files, no impossibilities so far.
+# lib (device 2051, inode 1058884): 1 files, no impossibilities so far.
 
-# 23 files, no impossibilities in 8 directories.
+# 23 files, no impossibilities in 9 directories.
 
 # Implicit Rules
 
@@ -314,7 +315,6 @@ SNAP_LIBRARY_PATH = /var/lib/snapd/lib/gl:/var/lib/snapd/lib/gl32:/var/lib/snapd
 %.cpp:
 
 %.h:
- 
 
 %.o:
 
@@ -330,6 +330,33 @@ SNAP_LIBRARY_PATH = /var/lib/snapd/lib/gl:/var/lib/snapd/lib/gl32:/var/lib/snapd
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
+
+kernel.o: ./src/kernel.cpp include/stivale2.h
+#  Implicit rule search has been done.
+#  Implicit/static pattern stem: 'kernel'
+#  Last modified 2022-02-04 02:27:39.474242681
+#  File has been updated.
+#  Needs to be updated (-q is set).
+# automatic
+# @ := kernel.o
+# automatic
+# * := kernel
+# automatic
+# < := ./src/kernel.cpp
+# automatic
+# + := ./src/kernel.cpp include/stivale2.h
+# automatic
+# % := 
+# automatic
+# ^ := ./src/kernel.cpp include/stivale2.h
+# automatic
+# ? := ./src/kernel.cpp
+# automatic
+# | := 
+# variable set hash-table stats:
+# Load=8/32=25%, Rehash=0, Collisions=7/17=41%
+#  recipe to execute (from '/home/yoavstrugo/Desktop/OSProject Remake/kernel/Makefile', line 82):
+	$(CC) $(CFLAGS) $(INTERNALCFLAGS) -c $< -o $(OBJDIR)/$@
 
 distclean: clean
 #  Phony target (prerequisite of .PHONY).
@@ -351,43 +378,6 @@ distclean: clean
 #  Last modified 2022-02-03 06:38:55.344995269
 #  File has been updated.
 #  Successfully updated.
-
-kernel.elf: kernel.o strings.o PSF.o Renderer.o
-#  Implicit rule search has not been done.
-#  File does not exist.
-#  File has been updated.
-#  Needs to be updated (-q is set).
-# variable set hash-table stats:
-# Load=0/32=0%, Rehash=0, Collisions=0/7=0%
-#  recipe to execute (from '/home/yoavstrugo/Desktop/OSProject Remake/kernel/Makefile', line 79):
-	$(LD) $(addprefix $(OBJDIR)/, $(notdir $^)) $(LDFLAGS) $(INTERNALLDFLAGS) -o $(BUILDDIR)/$@
-
-kernel.o: ./src/kernel.cpp include/stivale2.h
-#  Implicit rule search has been done.
-#  Implicit/static pattern stem: 'kernel'
-#  File does not exist.
-#  File has been updated.
-#  Needs to be updated (-q is set).
-# automatic
-# @ := kernel.o
-# automatic
-# * := kernel
-# automatic
-# < := ./src/kernel.cpp
-# automatic
-# + := ./src/kernel.cpp include/stivale2.h
-# automatic
-# % := 
-# automatic
-# ^ := ./src/kernel.cpp include/stivale2.h
-# automatic
-# ? := ./src/kernel.cpp include/stivale2.h
-# automatic
-# | := 
-# variable set hash-table stats:
-# Load=8/32=25%, Rehash=0, Collisions=7/17=41%
-#  recipe to execute (from '/home/yoavstrugo/Desktop/OSProject Remake/kernel/Makefile', line 82):
-	$(CC) $(CFLAGS) $(INTERNALCFLAGS) -c $< -o $(OBJDIR)/$@
 
 # Not a target:
 Renderer.o:
@@ -412,7 +402,7 @@ PSF.o:
 # Not a target:
 ./src/kernel.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-02-03 06:27:34.514182954
+#  Last modified 2022-02-04 02:34:30.464459764
 #  File has been updated.
 #  Successfully updated.
 
@@ -444,7 +434,7 @@ all: kernel.elf
 #  Modification time never checked.
 #  File has not been updated.
 
-test: kernel.o strings.o PSF.o Renderer.o
+test: kernel.o strings.o PSF.o Renderer.o MemoryMapper.o
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
@@ -457,7 +447,23 @@ test: kernel.o strings.o PSF.o Renderer.o
 #  Modification time never checked.
 #  File has not been updated.
 
+kernel.elf: kernel.o strings.o PSF.o Renderer.o MemoryMapper.o
+#  Implicit rule search has not been done.
+#  Last modified 2022-02-04 02:27:39.494243816
+#  File has been updated.
+#  Needs to be updated (-q is set).
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/7=0%
+#  recipe to execute (from '/home/yoavstrugo/Desktop/OSProject Remake/kernel/Makefile', line 79):
+	$(LD) $(addprefix $(OBJDIR)/, $(notdir $^)) $(LDFLAGS) $(INTERNALLDFLAGS) -o $(BUILDDIR)/$@
+
 .SUFFIXES: .cpp .h .o .d .elf
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
+MemoryMapper.o:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
@@ -480,13 +486,12 @@ strings.o:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
- 
 
 # files hash-table stats:
-# Load=20/1024=2%, Rehash=0, Collisions=0/95=0%
+# Load=21/1024=2%, Rehash=0, Collisions=0/102=0%
 # VPATH Search Paths
 
-vpath %.cpp ./src:./src/graphics:./src/graphics/fonts:./src/utils
+vpath %.cpp ./src:./src/graphics:./src/graphics/fonts:./src/memory:./src/utils
 vpath %.h include
 vpath %.o lib
 vpath %.d lib
@@ -496,12 +501,12 @@ vpath %.elf bin
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 49 / storage = 447 B / avg = 9 B
-# current buf: size = 8162 B / used = 447 B / count = 49 / avg = 9 B
+# strcache buffers: 1 (0) / strings = 53 / storage = 506 B / avg = 9 B
+# current buf: size = 8162 B / used = 506 B / count = 53 / avg = 9 B
 
-# strcache performance: lookups = 109 / hit rate = 55%
+# strcache performance: lookups = 115 / hit rate = 53%
 # hash-table stats:
-# Load=49/8192=1%, Rehash=0, Collisions=0/109=0%
-# Finished Make data base on Thu Feb  3 06:39:01 2022
+# Load=53/8192=1%, Rehash=0, Collisions=0/115=0%
+# Finished Make data base on Sat Feb  5 05:30:10 2022
 
  

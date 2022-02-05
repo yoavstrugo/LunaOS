@@ -1,4 +1,4 @@
-#include "strings.h"
+#include <strings.h>
 
 // Function to implement strcmp function
 int strcmp(const char *X, const char *Y)
@@ -61,11 +61,27 @@ int strncmp (const char *s1, const char *s2, size_t n)
   return c1 - c2;
 }
 
+void memcpy(void *dest, void *src, size_t n){
+   // Cast src and dest addresses to (char *)
+   char *csrc = (char *)src;
+   char *cdest = (char *)dest;
+  
+   // Copy contents of src[] to dest[]
+   for (int i = 0; i < n; i++)
+       cdest[i] = csrc[i];
+}
+
+void memset(char *addr, char value, size_t len) {
+    for (uint64_t i = 0; i < len; i++) {
+        addr[i] = value;
+    }
+}
+
 // toString methods
 #define MAX_STRING_LENGTH 128
 char _toStringOut[MAX_STRING_LENGTH];
 
-void _toString(uint64_t num, size_t size, char *array) {
+void _toString(uint64_t num, char *array) {
     // Calculate the length of the number
     uint8_t length = 0;
     {
@@ -86,58 +102,59 @@ void _toString(uint64_t num, size_t size, char *array) {
     }
 
     // Terminate the string
-    array[length] = NULL;
+    array[length] = '\0';
 }
 
 const char *toString(uint8_t num) {
-    _toString((uint64_t)num, sizeof(uint8_t), _toStringOut);
+    _toString((uint64_t)num, _toStringOut);
     return _toStringOut;
 }
 
 const char *toString(uint16_t num) {
-    _toString((uint64_t)num, sizeof(uint16_t), _toStringOut);
+    _toString((uint64_t)num, _toStringOut);
     return _toStringOut;
 }
 
 const char *toString(uint32_t num) {
-    _toString((uint64_t)num, sizeof(uint32_t), _toStringOut);
+    _toString((uint64_t)num, _toStringOut);
     return _toStringOut;
 }
 
 const char *toString(uint64_t num) {
-    _toString(num, sizeof(uint64_t), _toStringOut);
+    _toString(num, _toStringOut);
     return _toStringOut;
 }
 
-void _toString(int64_t num, size_t size) {
+void _toString(int64_t num) {
     if (num < 0) {
         _toStringOut[0] = '-';
-        _toString((uint64_t)(num * -1), size, _toStringOut + 1);
+        _toString((uint64_t)(num * -1), _toStringOut + 1);
     } else {
-        _toString((uint64_t)num, size, _toStringOut);
+        _toString((uint64_t)num, _toStringOut);
     }
 }
 
 const char *toString(int8_t num) {
-    _toString((int64_t)num, sizeof(num));
+    _toString((int64_t)num);
     return _toStringOut;
 }
 
 const char *toString(int16_t num) {
-    _toString((int64_t)num, sizeof(num));
+    _toString((int64_t)num);
     return _toStringOut;
 }
 
 const char *toString(int32_t num) {
-    _toString((int64_t)num, sizeof(num));
+    _toString((int64_t)num);
     return _toStringOut;
 }
 
 const char *toString(int64_t num) {
-    _toString((int64_t)num, sizeof(num));
+    _toString((int64_t)num);
     return _toStringOut;
 }
 
+// TODO: find a clever way to do it
 const char *toHex(uint64_t num, bool ignoreSize) {
 
     int length = 0; 
@@ -156,7 +173,7 @@ const char *toHex(uint64_t num, bool ignoreSize) {
         num /= 16;
     }
 
-    _toStringOut[length] = NULL;
+    _toStringOut[length] = '\0';
 
     return _toStringOut;
 }
@@ -171,7 +188,7 @@ const char *_toHex(uint64_t num, size_t n) {
         num /= 16;
     }
 
-    _toStringOut[length] = NULL;
+    _toStringOut[length] = '\0';
 
     return _toStringOut;
 }
