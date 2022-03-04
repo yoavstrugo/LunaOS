@@ -1,7 +1,12 @@
 #include <Bitmap.hpp>
 
-void Bitmap::setBuffer(uint8_t *buffer) {
+void Bitmap::setBuffer(uint8_t *buffer, uint64_t size) {
     this->_buffer = buffer;
+    this->_size = size;
+}
+
+uint64_t Bitmap::getSize() {
+    return this->_size;
 }
 
 bool Bitmap::operator[](uint64_t index) {

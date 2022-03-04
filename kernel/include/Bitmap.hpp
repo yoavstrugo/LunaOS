@@ -10,8 +10,16 @@ class Bitmap {
          * @brief           Set the buffer of the bitmap
          * 
          * @param buffer    The bitmap buffer array
+         * @param size      The size of the buffer
          */
-        void setBuffer(uint8_t *buffer);
+        void setBuffer(uint8_t *buffer, uint64_t size);
+
+        /**
+         * @brief           Get the size of the buffer
+         * 
+         * @return uint64_t The size of the buffer
+         */
+        uint64_t getSize();
 
         /**
          * @brief           Returns whether the bit at the index is set or not
@@ -33,4 +41,5 @@ class Bitmap {
 
     private:
         uint8_t *_buffer;
+        uint64_t _size;
 };

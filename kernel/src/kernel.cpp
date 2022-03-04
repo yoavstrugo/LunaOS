@@ -4,7 +4,11 @@
 #include <strings.hpp>
 #include <Renderer.hpp>
 #include <PSF.hpp>
-#include <memory/PhysicalMemoryAllocator.hpp>
+// #include <memory/PhysicalMemoryAllocator.hpp>
+#include <memory/PhysicalMemoryManager.hpp>
+#include <memory/BitmapAllocator.hpp>
+#include <memory/VirtualMemoryManager.hpp>
+#include <memory/Memory.hpp>
 
 // We need to tell the stivale bootloader where we want our stack to be.
 // We are going to allocate our stack as an array in .bss.
@@ -134,13 +138,20 @@ extern "C" void _start(struct stivale2_struct *stivale2_struct) {
 
     if (memmap_struct != NULL) renderer.printf("Found the memap struct!\n");
 
-    PhysicalMemoryAllocator allocator;
-    allocator.mapMemory(memmap_struct);
+    BitmapAllocator bitmapAllocator = BitmapAllocator(memmap_struct);
+    PhysicalMemoryManager *pmm = &bitmapAllocator;
 
-    renderer.printf("Total memory: %d MiB\n",     allocator.totalMemory() / (1024 * 1024));
-    renderer.printf("Free memory: %d MiB\n",      allocator.freeMemory() / (1024 * 1024));
-    renderer.printf("Used memory: %d MiB\n",      allocator.usedMemory() / (1024 * 1024));
-    renderer.printf("Reserved memory: %d MiB\n",  allocator.reservedMemory() / (1024 * 1024));
+    physical_address addr = pmm->allocateBlock();
+
+    physical_address PML4address;
+    asm volatile("mov %%cr3, %0" : "=r"(PML4address));
+
+    renderer.printf("PML4 address -  0x%64x", PML4address);
+ 
+    VirtualMemoryManager VMM = VirtualMemoryManager(PML4address, pmm);
+    
+    VMM.mapPage(0xCCCCCCCCCCCCCCCC, 0x5000);
+    VMM.unmapPage(0xCCCCCCCCCCCCCCCC);
 
     // We're done, just hang...
     for (;;) {

@@ -42,6 +42,7 @@ override INTERNALCFLAGS :=   \
 	-std=c++98           \
 	-ffreestanding       \
 	-fno-stack-protector \
+	-fno-rtti			 \
 	-fno-pic             \
 	-mabi=sysv           \
 	-mno-80387           \
