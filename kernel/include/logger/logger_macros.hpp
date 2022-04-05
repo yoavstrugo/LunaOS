@@ -1,13 +1,13 @@
 #pragma once
 
-#include <logger_log_level.hpp>
+#include <logger/logger_log_level.hpp>
 
 
 #define K_LOG_LEVEL     K_LOG_LEVEL_DEBUG
 
 #if K_LOG_LEVEL <= K_LOG_LEVEL_INFO
-#define logInfo(msg...)			loggerPrintln(msg)
-#define logInfon(msg...)		loggerPrint(msg)
+#define logInfo(msg...)			loggerPrint(msg)
+#define logInfon(msg...)		loggerPrintln(msg)
 #define K_LOGGING_INFO			true
 #else
 #define logInfo(msg...)			{};
@@ -16,8 +16,8 @@
 #endif
 
 #if K_LOG_LEVEL <= K_LOG_LEVEL_WARN
-#define logWarn(msg...)			loggerPrintln(msg)
-#define logWarnn(msg...)		loggerPrint(msg)
+#define logWarn(msg...)			loggerPrint(msg)
+#define logWarnn(msg...)		loggerPrintln(msg)
 #define K_LOGGING_WARN			true
 #else
 #define logWarn(msg...)			{};
@@ -26,8 +26,8 @@
 #endif
 
 #if G_LOG_LEVEL <= G_LOG_LEVEL_DEBUG
-#define logDebug(msg...)		loggerPrintln(msg)
-#define logDebugn(msg...)		loggerPrint(msg)
+#define logDebug(msg...)		loggerPrint(msg)
+#define logDebugn(msg...)		loggerPrintln(msg)
 #define K_LOGGING_DEBUG			true
 #else
 #define logDebug(msg...)		{};
