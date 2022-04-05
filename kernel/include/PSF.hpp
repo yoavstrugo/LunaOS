@@ -19,8 +19,7 @@ class PSF_Font {
     #define PSF_FONT_MAGIC 0x864ab572
 
     public:
-        PSF_Font();
-        PSF_Font(void *start_addr, void *end_addr);
+        void initiallizePSFFont(void *start_addr, void *end_addr);
         PSF_header *header();
         uint16_t *unicode();
 

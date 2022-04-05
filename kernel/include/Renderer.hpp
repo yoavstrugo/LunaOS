@@ -12,7 +12,7 @@ struct Point {
 
 class Renderer {
     public:
-        Renderer(stivale2_struct_tag_framebuffer* framebuffer, PSF_Font *font);
+        void initiallizeRenderer(stivale2_struct_tag_framebuffer* framebuffer, PSF_Font *font);
         void printf(const char* format, ...);
         
         // Print a character
