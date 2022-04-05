@@ -2,12 +2,18 @@
 
 #include <Renderer.hpp>
 #include <PSF.hpp>
+#include <stivale2/stivale2_tools.hpp>
 
 static PSF_Font font;
 static Renderer renderer;
 
-void loggerInitiallize(stivale2_struct_tag_framebuffer *framebuffer, stivale2_module *font_module) {
-    font.initiallizePSFFont((void *)font_module->begin, (void *)font_module->end);
+void loggerInitiallize(stivale2_struct *stivaleInfo) {
+    stivale2_struct_tag_framebuffer *framebuffer = (stivale2_struct_tag_framebuffer *)stivale2_get_tag(stivaleInfo, STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID);
+
+    stivale2_struct_tag_modules *modules = (stivale2_struct_tag_modules *)stivale2_get_tag(stivaleInfo, STIVALE2_STRUCT_TAG_MODULES_ID);
+    stivale2_module *fontModule = stivale2_get_module(modules, "psf_font");
+
+    font.initiallizePSFFont((void *)fontModule->begin, (void *)fontModule->end);
     renderer.initiallizeRenderer(framebuffer, &font);
 }
 
