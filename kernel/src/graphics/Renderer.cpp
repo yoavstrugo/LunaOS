@@ -3,7 +3,7 @@
 #define PIXEL uint32_t   /* pixel pointer */
 #define TABSIZE 4
 
-Renderer::Renderer(stivale2_struct_tag_framebuffer* framebuffer, PSF_Font *font) {
+void Renderer::initiallizeRenderer(stivale2_struct_tag_framebuffer* framebuffer, PSF_Font *font) {
     this->framebuffer = framebuffer;
     this->font = font;
 
