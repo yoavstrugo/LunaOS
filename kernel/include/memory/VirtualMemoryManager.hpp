@@ -47,6 +47,13 @@ class VirtualMemoryManager {
         VirtualMemoryManager(physical_address PML4, PhysicalMemoryManager *PMM);
 
         /**
+         * @brief Get the a new page.
+         * 
+         * @return linear_addresss The linear address of the page  
+         */
+        linear_address getPage();
+
+        /**
          * @brief               Map the page to the physical address
          * 
          * @param pageAddr      The page address 
