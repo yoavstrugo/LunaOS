@@ -4,11 +4,9 @@ BitmapAllocator::BitmapAllocator(stivale2_struct_tag_memmap *memmapStruct) {
     this->_freeMemory = 0;
     this->_usedMemory = 0;
     this->_reservedMemory = 0;
-
-    this->_mapMemory(memmapStruct);
 }
 
-void BitmapAllocator::_mapMemory(stivale2_struct_tag_memmap *memmapStruct) {
+void BitmapAllocator::initiallize(stivale2_struct_tag_memmap *memmapStruct) {
     if (this->_isInitiallized) return;    
     this->_isInitiallized = true;
 
