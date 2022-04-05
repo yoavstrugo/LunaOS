@@ -11,10 +11,8 @@ class BitmapAllocator : public PhysicalMemoryManager {
     public:
         /**
          * @brief               Construct a new Bitmap Allocator object
-         * 
-         * @param memmapStruct  The memory map given by stivale
          */
-        BitmapAllocator(stivale2_struct_tag_memmap *memmapStruct);
+        BitmapAllocator();
 
         /**
          * @brief                   Iterate through the memory map and, lock reserved pages
