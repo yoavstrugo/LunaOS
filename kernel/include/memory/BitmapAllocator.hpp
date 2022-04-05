@@ -16,6 +16,14 @@ class BitmapAllocator : public PhysicalMemoryManager {
          */
         BitmapAllocator(stivale2_struct_tag_memmap *memmapStruct);
 
+        /**
+         * @brief                   Iterate through the memory map and, lock reserved pages
+         *                          and count memory.
+         * 
+         * @param memmapStruct      The memory map given by stivale
+         */
+        void initiallize(stivale2_struct_tag_memmap *memmapStruct);
+
         physical_address allocateBlock();
         void freeBlock(physical_address blockAddr);
         
@@ -31,13 +39,6 @@ class BitmapAllocator : public PhysicalMemoryManager {
          * @return uint64_t         The total memory present in the memmap
          */
         static uint64_t _countMemory(stivale2_struct_tag_memmap *memmapStruct);
-        /**
-         * @brief                   Iterate through the memory map and, lock reserved pages
-         *                          and count memory.
-         * 
-         * @param memmapStruct      The memory map given by stivale
-         */
-        void _mapMemory(stivale2_struct_tag_memmap *memmapStruct);
 
         /**
          * @brief                   Lock a block, if the block is already locked,
