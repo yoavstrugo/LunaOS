@@ -2,34 +2,36 @@
 
 #include <logger/logger.hpp>
 
-k_gdt_entry::k_gdt_entry(uint64_t base, uint32_t limit, uint8_t accessByte, uint8_t flags) {
-    this->limit0 = (uint16_t)(limit & 0xFFFF); // first 16 bits of limit
-    this->base0 = (uint16_t)(base & 0xFFFF); // first 16 bits of base
-    this->base1 = (uint16_t)((base >> 16) & 0xFF); // next 8 bits
-    this->accessByte = accessByte;
-    this->limit1_flags = (uint8_t)(((limit >> 16) & 0xF) | (flags << 4));
-    this->base2 = (uint8_t)((base >> 0x18) & 0xFF);
-};
+k_gdt_descriptor gdtDescriptor;
+k_gdt_entry gdt[K_GDT_SIZE];
 
-void gdtInitiallize(linear_address gdtPage) {
-    linear_address gdtAddress = gdtPage + sizeof(k_gdt_descriptor);
-    
-    k_gdt_entry *gdt = (k_gdt_entry *)gdtAddress;
+k_gdt_entry gdtCreateEntry(uint8_t idx, uint64_t base, uint32_t limit, uint8_t accessByte, uint8_t flags) {
+    gdt[idx].limitLow = (uint16_t)(limit & 0xFFFF); // first 16 bits of limit
+    gdt[idx].baseLow = (uint16_t)(base & 0xFFFF); // first 16 bits of base
+    gdt[idx].baseMid = (uint16_t)((base >> 16) & 0xFF); // next 16 bits of base
+    gdt[idx].accessByte = accessByte;
+    gdt[idx].limitHighFlags = (uint8_t)(((limit >> 16) & 0xF) | (flags << 4)); // 4bits of limit and 4 bits of flags
+    gdt[idx].baseHigh = (uint8_t)((base >> 24) & 0xFF); // last 8 bits of base
+}
 
-    gdt[0] = k_gdt_entry(0x0, 0x00000, 0x00, 0x0); // null
-    gdt[1] = k_gdt_entry(0x0, 0xFFFFF, 0x9A, 0xA); // kernel code
-    gdt[2] = k_gdt_entry(0x0, 0xFFFFF, 0x92, 0xC); // kernel data
-    gdt[3] = k_gdt_entry(0x0, 0xFFFFF, 0xFA, 0xA); // user code
-    gdt[4] = k_gdt_entry(0x0, 0xFFFFF, 0xF2, 0xC); // user data
+void gdtInitiallize() {
+    // Create the table entries
+    gdtCreateEntry(0 ,0x0, 0x00000, 0x00, 0x0); // null
+    gdtCreateEntry(1 ,0x0, 0xFFFFF, 0x9A, 0xA); // kernel code
+    gdtCreateEntry(2 ,0x0, 0xFFFFF, 0x92, 0xC); // kernel data
+    gdtCreateEntry(3 ,0x0, 0xFFFFF, 0xFA, 0xA); // user code
+    gdtCreateEntry(4 ,0x0, 0xFFFFF, 0xF2, 0xC); // user data
 
-    k_gdt_descriptor *gdtDesc = (k_gdt_descriptor *)gdtPage;
-    gdtDesc->size = (sizeof(k_gdt_entry) * 5) - 1;
-    gdtDesc->offset = gdtAddress;
+    // Set the descriptor 
+    gdtDescriptor.size = (sizeof(k_gdt_entry) * K_GDT_SIZE) - 1;
+    gdtDescriptor.offset = (uint64_t)gdt;
 
-    logDebugn("%! has been created at 0x%64x.", "GDT", gdtAddress);
-    logDebugn("%! with \n\tsize %d \n\toffset 0x%64x \n\tcreated at 0x%64x", "GDT descriptor", gdtDesc->size, gdtDesc->offset, gdtDesc);
+    // Inform everythin and load with assembly
+    logDebugn("%! has been created at 0x%64x.", "GDT", (uint64_t)gdt);
+    logDebugn("%! with \n\tsize %d \n\toffset 0x%64x \n\tcreated at 0x%64x", "GDT Descriptor", 
+                gdtDescriptor.size, gdtDescriptor.offset, &gdtDescriptor);
 
-    _loadGDT(gdtDesc);
-    logDebugn("Loaded GDT at 0x%64x into lgdt register,", gdtDesc);
+    _loadGDT(&gdtDescriptor);
+    logDebugn("%! has been loadded into gdtr.", "GDT");
 }
 
