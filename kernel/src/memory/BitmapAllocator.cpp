@@ -1,6 +1,6 @@
 #include <memory/BitmapAllocator.hpp>
 
-BitmapAllocator::BitmapAllocator(stivale2_struct_tag_memmap *memmapStruct) {
+BitmapAllocator::BitmapAllocator() {
     this->_freeMemory = 0;
     this->_usedMemory = 0;
     this->_reservedMemory = 0;
