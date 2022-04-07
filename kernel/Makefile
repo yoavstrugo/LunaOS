@@ -9,12 +9,15 @@ ifeq ($(origin CC), default)
 CC := g++
 endif
 
+ASMC := nasm
+
 # Likewise, "ld" here is just a placeholder and your mileage may vary if using the
 # host's "ld".
 ifeq ($(origin LD), default)
 LD := ld
 endif
 
+vpath %.asm $(sort $(dir $(shell find ./src -type f -name '*')))
 vpath %.cpp $(sort $(dir $(shell find ./src -type f -name '*')))
 vpath %.h 	include
 vpath %.hpp include
@@ -31,10 +34,12 @@ BUILDDIR        = bin
 OBJDIR          = lib
 
 # User controllable CFLAGS.
-CFLAGS ?= -Wall -Wextra -O0 -pipe -g
+CFLAGS ?= -Wall -Wunused-variable -Wunused-parameter -Wextra -O0 -pipe -g 
 
 # User controllable linker flags. We set none by default.
 LDFLAGS ?=
+
+ASMFLAGS ?= -f elf64
 
 # Internal C flags that should not be changed by the user.
 override INTERNALCFLAGS :=   \
@@ -66,7 +71,9 @@ override INTERNALLDFLAGS :=    \
 
 # Use find to glob all *.c files in the directory and extract the object names.
 SRCS 			= $(shell find ./ -type f -name '*.cpp')
+ASMSRC			= $(shell find ./ -type f -name '*.asm')
 OBJS 			= $(patsubst %.cpp, %.o, $(notdir $(SRCS)))
+OBJS 			+= $(patsubst %.asm, %_asm.o, $(notdir $(ASMSRC)))
 HEADER_DEPS 	= $(OBJS:.cpp=.d)
 
 # Default target.
@@ -78,10 +85,21 @@ stivale2.h:
 
 # Link rules for the final kernel executable.
 $(KERNEL): $(OBJS)
-	$(LD) $(addprefix $(OBJDIR)/, $(notdir $^)) $(LDFLAGS) $(INTERNALLDFLAGS) -o $(BUILDDIR)/$@
+	@echo "--> Linking"
+	@$(LD) $(addprefix $(OBJDIR)/, $(notdir $^)) $(LDFLAGS) $(INTERNALLDFLAGS) -o $(BUILDDIR)/$@
+
+%_asm.o: %.asm
+	@echo "--> Assembling"
+	@$(ASMC) $(ASMFLAGS) $< -o $(OBJDIR)/$@
+
+# interrupts.o: interrupts.cpp
+# 	@echo "--> Compiling $<"
+# 	@$(CC) $(CFLAGS) --mno-red-zone --mgeneral-regs-only $(INTERNALCFLAGS) -c $< -o $(OBJDIR)/$@
 
 %.o: %.cpp stivale2.h
-	$(CC) $(CFLAGS) $(INTERNALCFLAGS) -c $< -o $(OBJDIR)/$@
+	@echo "--> Compiling $<"
+	@$(CC) $(CFLAGS) $(INTERNALCFLAGS) -c $< -o $(OBJDIR)/$@
+
 # Compilation rules for *.c files.
 #include $(HEADER_DEPS)
 
@@ -94,5 +112,6 @@ clean:
 distclean: clean
 	rm -f stivale2.h
 
-test: $(OBJS)
-	echo $(OBJDIR)
+.PHONY: test
+test:
+	echo $(OBJS)
