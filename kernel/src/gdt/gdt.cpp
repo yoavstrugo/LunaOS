@@ -5,7 +5,7 @@
 k_gdt_descriptor gdtDescriptor;
 k_gdt_entry gdt[K_GDT_SIZE];
 
-k_gdt_entry gdtCreateEntry(uint8_t idx, uint64_t base, uint32_t limit, uint8_t accessByte, uint8_t flags) {
+void gdtCreateEntry(uint8_t idx, uint32_t base, uint32_t limit, uint8_t accessByte, uint8_t flags) {
     gdt[idx].limitLow = (uint16_t)(limit & 0xFFFF); // first 16 bits of limit
     gdt[idx].baseLow = (uint16_t)(base & 0xFFFF); // first 16 bits of base
     gdt[idx].baseMid = (uint16_t)((base >> 16) & 0xFF); // next 16 bits of base
