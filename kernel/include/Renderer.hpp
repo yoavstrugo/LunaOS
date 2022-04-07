@@ -6,6 +6,11 @@
 #include <stdarg.h>
 #include <strings.hpp>
 
+#define K_HEADER_FG 0xF85E2B
+#define K_HEADER_BG 0x000000
+
+typedef uint32_t color_t;
+
 struct Point {
     int X, Y;
 };
@@ -13,16 +18,22 @@ struct Point {
 class Renderer {
     public:
         void initiallizeRenderer(stivale2_struct_tag_framebuffer* framebuffer, PSF_Font *font);
-        void printf(const char* format, ...);
+        void printf(const char* format, va_list arg);
         
         // Print a character
         void putchar(unsigned short int c);    
+        void setColor(color_t fg, color_t bg);
+        void defaultColor();
 
     
     private:
         stivale2_struct_tag_framebuffer* framebuffer;
         PSF_Font *font;
         Point cursor;
+
+        color_t _fg;
+        color_t _bg;
+
         void _advance_cursor();
         void _moveCursorDown();
         void _print(const char *str);
@@ -32,8 +43,7 @@ class Renderer {
             /* note that this is int, not char as it's a unicode character */
             unsigned short int c,
             /* cursor position on screen, in characters not in pixels */
-            int cx, int cy,
-            /* foreground and background colors, say 0xFFFFFF and 0x000000 */
-            uint32_t fg, uint32_t bg);
+            int cx, int cy
+            );
 
 };
