@@ -17,6 +17,10 @@ void loggerInitiallize(stivale2_struct *stivaleInfo) {
     renderer.initiallizeRenderer(framebuffer, &font);
 }
 
+void loggerPrintDirect(const char *msg, va_list valist) {
+    renderer.printf(msg, valist);
+}
+
 void loggerPrint(const char *msg, ...) {
     va_list valist;
     va_start(valist, msg);
