@@ -1,10 +1,6 @@
 kernel/bin/*
 kernel/lib/*
+build/*
 .vscode
+.VSCodeCounter/*
 OVMF
-./build
-.vscode
-*.o
-*.elf
-*.img
-*.d
