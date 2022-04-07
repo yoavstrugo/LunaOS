@@ -23,6 +23,7 @@ OVMFDIR = ./OVMF
 
 .PHONY: buildimg
 buildimg: 
+	@mkdir build
 	@echo "Creating an empty image..."
 # Create a file with size 512kB containin zeros
 	@dd if=/dev/zero of=$(BUILDDIR)/$(OSNAME).img bs=1024 count=$(IMAGESIZE) 2>/dev/null
