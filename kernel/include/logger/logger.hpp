@@ -1,9 +1,10 @@
 #pragma once
 
-#include <Renderer.hpp>
+#include <stivale2/stivale2.h>
 #include <stdarg.h>
+#include <logger/logger_macros.hpp>
 
-void loggerInitiallize(Renderer *renderer);
+void loggerInitiallize(stivale2_struct *stivale2Struct);
 
 void loggerPrint(const char *msg, ...);
 
