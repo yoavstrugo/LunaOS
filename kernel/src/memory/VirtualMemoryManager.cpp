@@ -72,9 +72,6 @@ void VirtualMemoryManager::mapPage(linear_address pageAddr, physical_address phy
 }
 
 void VirtualMemoryManager::unmapPage(linear_address pageAddr) {
-    PageTable *PT;
-    PageTableEntry *PTe;
-
     PageTableEntry *PML4e = &this->_PML4->entries[PML4_indexer(pageAddr)];
     if (PML4e->present) {
         PageTable *PDP = (PageTable *)(PML4e->address << 12);
