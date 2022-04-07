@@ -12,6 +12,9 @@
 
 #include <strings.hpp>
 
+#include <gdt/gdt.hpp>
+#include <interrupts/interrupts.hpp>
+
 #include <memory/PhysicalMemoryManager.hpp>
 #include <memory/BitmapAllocator.hpp>
 #include <memory/VirtualMemoryManager.hpp>
@@ -101,20 +104,19 @@ extern "C" void kernelMain(stivale2_struct *stivale2Struct) {
 }
 
 void kernelInitiallize(stivale2_struct *stivaleInfo) {
-    stivale2_struct_tag_framebuffer *framebuffer = (stivale2_struct_tag_framebuffer *)stivale2_get_tag(stivaleInfo, STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID);
-
-    stivale2_struct_tag_modules *modules = (stivale2_struct_tag_modules *)stivale2_get_tag(stivaleInfo, STIVALE2_STRUCT_TAG_MODULES_ID);
-    stivale2_module *fontModule = stivale2_get_module(modules, "psf_font");
-
-    loggerInitiallize(framebuffer, fontModule);
-
+    loggerInitiallize(stivaleInfo);
     logDebugn("Logger has been initiallized.");
+
+    gdtInitiallize(0x30000);
+
+    interruptsInitiallize();
+
+    asm("int $0x0E");
 
     stivale2_struct_tag_memmap *memoryMap = (stivale2_struct_tag_memmap *)stivale2_get_tag(stivaleInfo, STIVALE2_STRUCT_TAG_MEMMAP_ID);
     if (memoryMap == NULL) kernelPanic("Memory map couldn't be found!");
     
     memoryInitiallize(memoryMap);
-
     logDebugn("Memory has been initiallized.");
 }
 
