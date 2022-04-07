@@ -1,5 +1,6 @@
 kernel/bin/*
 kernel/lib/*
+.vscode
 OVMF
 ./build
 .vscode
