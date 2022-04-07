@@ -9,14 +9,13 @@ void Renderer::initiallizeRenderer(stivale2_struct_tag_framebuffer* framebuffer,
 
     this->cursor.X = 0;
     this->cursor.Y = 0;
+
+    this->defaultColor();
 }
 
-void Renderer::printf(const char *format, ...) {
-    int i;
+void Renderer::printf(const char *format, va_list arg) {
+    uint64_t i;
     char *s;
-
-    va_list arg;
-    va_start(arg, format);
 
     
     for (char *traverse = (char *)format; *traverse != '\0'; traverse++) {
@@ -48,6 +47,12 @@ void Renderer::printf(const char *format, ...) {
                 i = va_arg(arg, uint64_t);
                 _print(toHex((uint64_t)i, true));
                 break;
+            case '!':
+                s = va_arg(arg, char *);
+                this->setColor(K_HEADER_FG, K_HEADER_BG);
+                _print((const char *)s);
+                this->defaultColor();
+                break;
             default:
                 i = va_arg(arg, uint64_t);
                 if (!strncmp((const char *)traverse, "8x", 2)) {
@@ -68,8 +73,6 @@ void Renderer::printf(const char *format, ...) {
                 }
         }
     }
-
-    va_end(arg);
 }
 
 void Renderer::_print(const char *str) {
@@ -104,17 +107,24 @@ void Renderer::putchar(unsigned short int c) {
             return;
     }
 
-    this->_insert_char(c, this->cursor.X, this->cursor.Y, 0xFFFFFF, 0x000000);
+    this->_insert_char(c, this->cursor.X, this->cursor.Y);
     this->_advance_cursor();
+}
+
+void Renderer::defaultColor() {
+    this->setColor(0xFFFFFF, 0x000000);
+}
+
+void Renderer::setColor(uint32_t fg, uint32_t bg) {
+    this->_fg = fg;
+    this->_bg = bg;
 }
 
 void Renderer::_insert_char (
     /* note that this is int, not char as it's a unicode character */
     unsigned short int c,
     /* cursor position on screen, in characters not in pixels */
-    int cx, int cy,
-    /* foreground and background colors, say 0xFFFFFF and 0x000000 */
-    uint32_t fg, uint32_t bg)
+    int cx, int cy)
 {
 
     uint16_t *unicode = this->font->unicode();
@@ -151,7 +161,7 @@ void Renderer::_insert_char (
         uint16_t actual_glyph = ((*((uint16_t *)glyph)) << 8) | ((*(uint16_t *)glyph) >> 8);
         /* display a row */
         for(uint32_t x = 0; x < this->font->header()->width; x++){
-            *((PIXEL *)(fbAddress + current_offset)) = actual_glyph & mask ? fg : bg;
+            *((PIXEL *)(fbAddress + current_offset)) = actual_glyph & mask ? this->_fg : this->_bg;
             /* adjust to the next pixel */
             mask >>= 1;
             current_offset += sizeof(PIXEL);
