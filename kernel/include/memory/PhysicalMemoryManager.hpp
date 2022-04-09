@@ -11,7 +11,7 @@ class PhysicalMemoryManager {
          * @return physical_address The physical address of the allocated block it will
          *                          be page-aligned.
          */
-        virtual physical_address allocateBlock() = 0;
+        virtual physical_address_t allocateBlock() = 0;
 
         /**
          * @brief                   Free an allocated block in the physical memory,
@@ -19,7 +19,7 @@ class PhysicalMemoryManager {
          * 
          * @param blockAddr         The address of the block to free. Must be page-aligned.
          */
-        virtual void freeBlock(physical_address blockAddr) = 0;
+        virtual void freeBlock(physical_address_t blockAddr) = 0;
 
         /**
          * @brief                   Get the total memory (in bytes) in the system. 

@@ -22,8 +22,8 @@ class BitmapAllocator : public PhysicalMemoryManager {
          */
         void initiallize(stivale2_struct_tag_memmap *memmapStruct);
 
-        physical_address allocateBlock();
-        void freeBlock(physical_address blockAddr);
+        physical_address_t allocateBlock();
+        void freeBlock(physical_address_t blockAddr);
         
         uint64_t totalMemory();
         uint64_t freeMemory();
@@ -44,7 +44,7 @@ class BitmapAllocator : public PhysicalMemoryManager {
          * 
          * @param blockAddr         The address of the block, page-aligned.
          */
-        void _lockBlock(physical_address blockAddr);
+        void _lockBlock(physical_address_t blockAddr);
 
         /**
          * @brief                   Free a block, if the block is already free,
@@ -52,14 +52,14 @@ class BitmapAllocator : public PhysicalMemoryManager {
          * 
          * @param blockAddr         The address of the block, page-aligned.
          */
-        void _freeBlock(physical_address blockAddr);
+        void _freeBlock(physical_address_t blockAddr);
 
         /**
          * @brief                   Get the address of the next free block.
          * 
          * @return physical_address The address of the block, page-aligned.
          */
-        physical_address _nextBlock();
+        physical_address_t _nextBlock();
 
         uint64_t _freeMemory;
         uint64_t _usedMemory;
