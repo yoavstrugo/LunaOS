@@ -5,4 +5,4 @@
 
 extern BitmapAllocator memoryPhysicalAllocator;
 
-void memoryInitiallize(stivale2_struct_tag_memmap *memoryMap);
+void memoryInitiallize(stivale2_struct *stivale2Info);

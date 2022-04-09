@@ -18,6 +18,7 @@
 #include <memory/PhysicalMemoryManager.hpp>
 #include <memory/BitmapAllocator.hpp>
 #include <memory/VirtualMemoryManager.hpp>
+#include <memory/paging.hpp>
 #include <memory/memory.hpp>
 
 // We need to tell the stivale bootloader where we want our stack to be.
@@ -84,22 +85,6 @@ static struct stivale2_header stivale_hdr = {
 extern "C" void kernelMain(stivale2_struct *stivale2Struct) {
     kernelInitiallize(stivale2Struct);
 
-    // PhysicalMemoryManager *pmm = &bitmapAllocator;
-
-    // physical_address addr = pmm->allocateBlock();
-
-    // physical_address PML4address;
-    // asm volatile("mov %%cr3, %0" : "=r"(PML4address));
-
-    // renderer.printf("PML4 address -  0x%64x", PML4address);
- 
-    // VirtualMemoryManager VMM = VirtualMemoryManager(PML4address, pmm);
-    
-    // VMM.mapPage(0xCCCCCCCCCCCCCCCC, 0x5000);
-    // VMM.unmapPage(0xCCCCCCCCCCCCCCCC);
-
-    // We're done, just hang...
-
     kernelHalt();
 }
 
@@ -107,24 +92,32 @@ void kernelInitiallize(stivale2_struct *stivaleInfo) {
     loggerInitiallize(stivaleInfo);
     logDebugn("Logger has been initiallized.");
 
-    gdtInitiallize(0x30000);
+    gdtInitiallize();
 
     interruptsInitiallize();
 
-    asm("int $0x0E");
-
-    stivale2_struct_tag_memmap *memoryMap = (stivale2_struct_tag_memmap *)stivale2_get_tag(stivaleInfo, STIVALE2_STRUCT_TAG_MEMMAP_ID);
-    if (memoryMap == NULL) kernelPanic("Memory map couldn't be found!");
+    // asm("int $0x0E");
     
-    memoryInitiallize(memoryMap);
+    memoryInitiallize(stivaleInfo);
     logDebugn("Memory has been initiallized.");
+
+    logInfon("%! address is 0x%64x", "PML4", pagingGetCurrentSpace());
+    pagingMapPage(0x0000001000000000, 0x31000);
+
+    logInfon("0x%64x virt is mapped to 0x%64x phys", 0x0000001000000000, pagingVirtualToPhysical(0x0000001000000000));
+    logInfon("0x%64x virt is mapped to 0x%64x phys", 0xFEBD000, pagingVirtualToPhysical(0xFEBD000));
+    logInfon("0x%64x virt is mapped to 0x%64x phys", 0xfffffffffffeffff, pagingVirtualToPhysical(0xfffffffffffe0000));
+    logInfon("0x%64x virt is mapped to 0x%64x phys", 0xffffffff80000000, pagingVirtualToPhysical(0xffffffff80000000));
+    logInfon("0x%64x virt is mapped to 0x%64x phys", 0xffff8000caa00000, pagingVirtualToPhysical(0xffff8000caa00000));
 }
 
 void kernelPanic(const char *msg, ...) {
     va_list valist;
     va_start(valist, msg);
-    loggerPrintln(msg, valist);
+    loggerPrintDirect(msg, valist);
     va_end(valist);
+
+    interruptsDisable();
 
     for (;;) {
         asm ("hlt");
