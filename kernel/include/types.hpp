@@ -5,5 +5,7 @@
 typedef uint64_t address;
 
 // typedefs for address
-typedef address         linear_address;
-typedef address         physical_address;
+typedef address     virtual_address_t;
+typedef address     physical_address_t;
+
+#define NULL    ((address)0)
