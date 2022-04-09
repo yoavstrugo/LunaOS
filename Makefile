@@ -57,11 +57,26 @@ buildimg:
 
 .PHONY: run
 run:
-	qemu-system-x86_64 -drive file=$(BUILDDIR)/$(OSNAME).img -m 256M -cpu qemu64 -drive if=pflash,format=raw,unit=0,file="$(OVMFDIR)/OVMF_CODE-pure-efi.fd",readonly=on -drive if=pflash,format=raw,unit=1,file="$(OVMFDIR)/OVMF_VARS-pure-efi.fd" -net none
+	@qemu-system-x86_64 -m 256M -cpu qemu64 -net none \
+	-drive file=$(BUILDDIR)/$(OSNAME).img \
+	-drive if=pflash,format=raw,unit=0,file="$(OVMFDIR)/OVMF_CODE-pure-efi.fd",readonly=on \
+	-drive if=pflash,format=raw,unit=1,file="$(OVMFDIR)/OVMF_VARS-pure-efi.fd"
 
 .PHONY: qemudebug
 qemudebug:
-	@echo Launched QEMU with GDB server on :1234
-	@qemu-system-x86_64 -drive file=$(BUILDDIR)/$(OSNAME).img \
-	-s -S -m 256M -cpu qemu64 -drive if=pflash,format=raw,unit=0,file="$(OVMFDIR)/OVMF_CODE-pure-efi.fd",readonly=on \
-	-drive if=pflash,format=raw,unit=1,file="$(OVMFDIR)/OVMF_VARS-pure-efi.fd" -net none
+	@qemu-system-x86_64 -s -S -m 256M -cpu qemu64 -net none \
+	-drive format=raw,file=$(BUILDDIR)/$(OSNAME).img  \
+	-drive if=pflash,format=raw,unit=0,file="$(OVMFDIR)/OVMF_CODE-pure-efi.fd",readonly=on \
+	-drive if=pflash,format=raw,unit=1,file="$(OVMFDIR)/OVMF_VARS-pure-efi.fd" 
+	@echo Launched QEMU with GDB server on localhost:1234"
+
+
+.PHONY: debug
+debug:
+	@echo "Starting remote debugger on localhost:1234"
+	@gdb	-ex "set breakpoint pending on" \
+			-ex "file kernel/bin/kernel.elf" \
+			-ex "b kernelMain" \
+			-ex "set disassembly-flavor intel" \
+			-ex "target remote :1234" \
+			-ex "continue"
