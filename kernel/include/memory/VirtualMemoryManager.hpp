@@ -8,10 +8,10 @@
 #define PAGE_TABLE_SIZE 512
 
 // Macros to calculate the relevant address parts
-#define PT_indexer(add)        (add >> 12) & 0x01ff // Get the address of the Page Table
-#define PD_indexer(add)        (add >> 21) & 0x01ff // Get the address of the Page Directory
-#define PDP_indexer(add)       (add >> 30) & 0x01ff // Get the address of the Page Directory Pointer
-#define PML4_indexer(add)      (add >> 39) & 0x01ff // Get the address of the Page Map Level 4
+#define PT_indexer(add)        ((add >> 12) & 0x01ff) // Get the address of the Page Table
+#define PD_indexer(add)        ((add >> 21) & 0x01ff) // Get the address of the Page Directory
+#define PDP_indexer(add)       ((add >> 30) & 0x01ff) // Get the address of the Page Directory Pointer
+#define PML4_indexer(add)      ((add >> 39) & 0x01ff) // Get the address of the Page Map Level 4
 
 struct PageTableEntry {
     bool present:       1;
@@ -44,14 +44,7 @@ class VirtualMemoryManager {
          * @param PML4  The address to the PML4 
          * @param PMM   The Physical Memory Manager
          */
-        VirtualMemoryManager(physical_address PML4, PhysicalMemoryManager *PMM);
-
-        /**
-         * @brief Get the a new page.
-         * 
-         * @return linear_addresss The linear address of the page  
-         */
-        linear_address getPage();
+        VirtualMemoryManager(physical_address_t PML4, PhysicalMemoryManager *PMM);
 
         /**
          * @brief               Map the page to the physical address
@@ -59,14 +52,14 @@ class VirtualMemoryManager {
          * @param pageAddr      The page address 
          * @param physicAddr    The physical adress
          */
-        void mapPage(linear_address pageAddr, physical_address physicAddr);
+        void mapPage(virtual_address_t pageAddr, physical_address_t physicAddr);
 
         /**
          * @brief               Unmap the page
          * 
          * @param pageAddr      The page address 
          */
-        void unmapPage(linear_address pageAddr);
+        void unmapPage(virtual_address_t pageAddr);
 
         /**
          * @brief               Remap the page to the physical address
@@ -74,7 +67,7 @@ class VirtualMemoryManager {
          * @param pageAddr      The page address 
          * @param physicAddr    The physical adress
          */
-        void remapPage(linear_address pageAddr, physical_address physicAddr);
+        void remapPage(virtual_address_t pageAddr, physical_address_t physicAddr);
 
     private:
         PageTable *_PML4;

@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stivale2.h>
 #include <types.hpp>
-#include <memory/PhysicalMemoryAllocator.hpp>
+#include <memory/PhysicalMemoryManager.hpp>
 #include <strings.hpp>
 
 // Macros to calculate the relevant address parts
@@ -38,16 +38,16 @@ struct PageTable {
 
 class PageManager {
     public:
-        PageManager(PhysicalMemoryAllocator *physicalMemoryAllocator);
-        physical_address getPML4();
+        PageManager(PhysicalMemoryManager *physicalMemoryAllocator);
+        physical_address_t getPML4();
 
-        void mapPage(linear_address pageAddress, physical_address physicalAddress);
+        void mapPage(virtual_address_t pageAddress, physical_address_t physicalAddress);
 
-        void freePage(linear_address pageAddr);
-        void lockPage(linear_address pageAddr);
-        linear_address requestPage();
+        void freePage(virtual_address_t pageAddr);
+        void lockPage(virtual_address_t pageAddr);
+        virtual_address_t requestPage();
 
     private:
-        PhysicalMemoryAllocator *_physicalMemoryAllocator;
+        PhysicalMemoryManager *_physicalMemoryAllocator;
         PageTable  *_PML4;
 };

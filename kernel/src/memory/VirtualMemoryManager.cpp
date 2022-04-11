@@ -1,6 +1,8 @@
 #include <memory/VirtualMemoryManager.hpp>
 
-VirtualMemoryManager::VirtualMemoryManager(physical_address PML4, PhysicalMemoryManager *PMM) {
+#include <memory/paging.hpp>
+
+VirtualMemoryManager::VirtualMemoryManager(physical_address_t PML4, PhysicalMemoryManager *PMM) {
     this->_PML4 = (PageTable *)PML4;
     this->_PMM = PMM;
 }
@@ -21,11 +23,11 @@ PageTable *createOrGetPagetable(PageTableEntry *parentEntry, PhysicalMemoryManag
         memset((char *)pageTable, 0, PAGE_SIZE);
 
         // Modify properties
-        parentEntry->address = (physical_address)pageTable >> 12;
+        parentEntry->address = (physical_address_t)pageTable >> 12;
         parentEntry->present = true;
         parentEntry->readWrite = true;
     } else {
-        pageTable = (PageTable *)((physical_address)parentEntry->address << 12);
+        pageTable = (PageTable *)((physical_address_t)parentEntry->address << 12);
     }
 
     return pageTable;
@@ -46,7 +48,7 @@ bool isPagetableEmpty(PageTable *pageTable) {
 }
 
 // TODO: Add flags parameter
-void VirtualMemoryManager::mapPage(linear_address pageAddr, physical_address physicAddr) {
+void VirtualMemoryManager::mapPage(virtual_address_t pageAddr, physical_address_t physicAddr) {
     PageTable *PDP, *PD, *PT;
     uint64_t offset;
 
@@ -71,7 +73,7 @@ void VirtualMemoryManager::mapPage(linear_address pageAddr, physical_address phy
     PTe->readWrite = true;
 }
 
-void VirtualMemoryManager::unmapPage(linear_address pageAddr) {
+void VirtualMemoryManager::unmapPage(virtual_address_t pageAddr) {
     PageTableEntry *PML4e = &this->_PML4->entries[PML4_indexer(pageAddr)];
     if (PML4e->present) {
         PageTable *PDP = (PageTable *)(PML4e->address << 12);
@@ -92,27 +94,27 @@ void VirtualMemoryManager::unmapPage(linear_address pageAddr) {
                 // Check if the table is empty
                 if (isPagetableEmpty(PT)) {
                     // It's empty, remove the table
-                    this->_PMM->freeBlock((physical_address)PT);
+                    this->_PMM->freeBlock((physical_address_t)PT);
                     PDe->present = false;
                 }
             }
 
             // Check if the table is empty
             if (isPagetableEmpty(PD)) {
-                this->_PMM->freeBlock((physical_address)PD);
+                this->_PMM->freeBlock((physical_address_t)PD);
                 PDPe->present = false;
             }  
         }
 
         // Check if the table is empty
         if (isPagetableEmpty(PDP)) {
-            this->_PMM->freeBlock((physical_address)PDP);
+            this->_PMM->freeBlock((physical_address_t)PDP);
             PML4e->present = false;
         }
     }
 }
 
-void VirtualMemoryManager::remapPage(linear_address pageAddr, physical_address physicAddr) {
+void VirtualMemoryManager::remapPage(virtual_address_t pageAddr, physical_address_t physicAddr) {
     this->unmapPage(pageAddr);
     this->mapPage(pageAddr, physicAddr);
 }
