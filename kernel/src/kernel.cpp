@@ -20,6 +20,7 @@
 #include <memory/VirtualMemoryManager.hpp>
 #include <memory/paging.hpp>
 #include <memory/memory.hpp>
+#include <memory/buddy_allocator.hpp>
 
 // We need to tell the stivale bootloader where we want our stack to be.
 // We are going to allocate our stack as an array in .bss.
@@ -101,14 +102,14 @@ void kernelInitiallize(stivale2_struct *stivaleInfo) {
     memoryInitiallize(stivaleInfo);
     logDebugn("Memory has been initiallized.");
 
-    logInfon("%! address is 0x%64x", "PML4", pagingGetCurrentSpace());
-    pagingMapPage(0x0000001000000000, 0x31000);
+    k_buddyallocator buddyAllocator = k_buddyallocator(0x100000, 0x10000);
+    virtual_address_t ptr = buddyAllocator.allocate(0x1000);
+    virtual_address_t ptr1 = buddyAllocator.allocate(100);
+    virtual_address_t ptr2 = buddyAllocator.allocate(510);
+    virtual_address_t ptr3 = buddyAllocator.allocate(1002);
 
-    logInfon("0x%64x virt is mapped to 0x%64x phys", 0x0000001000000000, pagingVirtualToPhysical(0x0000001000000000));
-    logInfon("0x%64x virt is mapped to 0x%64x phys", 0xFEBD000, pagingVirtualToPhysical(0xFEBD000));
-    logInfon("0x%64x virt is mapped to 0x%64x phys", 0xfffffffffffeffff, pagingVirtualToPhysical(0xfffffffffffe0000));
-    logInfon("0x%64x virt is mapped to 0x%64x phys", 0xffffffff80000000, pagingVirtualToPhysical(0xffffffff80000000));
-    logInfon("0x%64x virt is mapped to 0x%64x phys", 0xffff8000caa00000, pagingVirtualToPhysical(0xffff8000caa00000));
+    buddyAllocator.deallocate(ptr1);
+    buddyAllocator.deallocate(ptr3);
 }
 
 void kernelPanic(const char *msg, ...) {
