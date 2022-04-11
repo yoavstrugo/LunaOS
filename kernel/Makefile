@@ -26,7 +26,7 @@ vpath %.d 	lib
 vpath %.elf bin
 
 .SUFFIXES:
-.SUFFIXES: .cpp .h .hpp .o .d .elf
+.SUFFIXES: .cpp .h .hpp .o .d .elf .asm
 
 SRCDIR          = src
 INCLUDESDIR     = include
@@ -46,6 +46,7 @@ override INTERNALCFLAGS :=   \
 	-I $(INCLUDESDIR)    \
 	-std=c++98           \
 	-ffreestanding       \
+	-masm=intel			 \
 	-fno-stack-protector \
 	-fno-rtti			 \
 	-fno-pic             \
@@ -85,19 +86,19 @@ stivale2.h:
 
 # Link rules for the final kernel executable.
 $(KERNEL): $(OBJS)
-	@echo "--> Linking"
+	@echo "--> Linking $^ to $@"
 	@$(LD) $(addprefix $(OBJDIR)/, $(notdir $^)) $(LDFLAGS) $(INTERNALLDFLAGS) -o $(BUILDDIR)/$@
 
 %_asm.o: %.asm
-	@echo "--> Assembling"
+	@echo "--> Assembling $^ to $@"
 	@$(ASMC) $(ASMFLAGS) $< -o $(OBJDIR)/$@
 
-# interrupts.o: interrupts.cpp
-# 	@echo "--> Compiling $<"
-# 	@$(CC) $(CFLAGS) --mno-red-zone --mgeneral-regs-only $(INTERNALCFLAGS) -c $< -o $(OBJDIR)/$@
+# requests.o exceptions.o : requests.cpp exceptions.cpp
+# 	@echo "--> Compiling $^ to $@"
+# 	@$(CC) $(CFLAGS) -mgeneral-regs-only $(INTERNALCFLAGS) -c $< -o $(OBJDIR)/$@
 
 %.o: %.cpp stivale2.h
-	@echo "--> Compiling $<"
+	@echo "--> Compiling $^ to $@"
 	@$(CC) $(CFLAGS) $(INTERNALCFLAGS) -c $< -o $(OBJDIR)/$@
 
 # Compilation rules for *.c files.
@@ -107,7 +108,8 @@ $(KERNEL): $(OBJS)
 # Remove object files and the final executable.
 .PHONY: clean
 clean:
-	rm -rf $(BUILDDIR)/$(KERNEL) $(OBJDIR)/*
+	@echo "--> Cleaning..."
+	@rm -rf $(BUILDDIR)/$(KERNEL) $(OBJDIR)/*
 .PHONY: distclean
 distclean: clean
 	rm -f stivale2.h
