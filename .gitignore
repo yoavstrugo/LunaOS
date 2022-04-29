@@ -5,3 +5,4 @@ build/*
 .VSCodeCounter/*
 OVMF/*
 kernel/Compiling
+MyOS.iso
