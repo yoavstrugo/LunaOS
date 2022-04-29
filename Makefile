@@ -3,27 +3,26 @@ OSNAME = MyOS
 
 # Kernel directory
 KERNELDIR = kernel
-KERNELDATADIR = $(KERNELDIR)/bin/data/*
-KERNELDATA = $(wildcard ${KERNELDATADIR})
-
+KERNELBIN = $(KERNELDIR)/bin/kernel.elf
+KERNELDATA = $(wildcard $(KERNELDIR)/bin/data/*)
 
 # Bootsector properties
-LIMINEDIR = bootloader
+LIMINEDIR = limine
 LIMINEEFI = $(LIMINEDIR)/BOOTX64.EFI
-LIMINECFG = $(LIMINEDIR)/limine.cfg
-LIMINEDATADIR = $(LIMINEDIR)/data/*
-LIMINEDATA = $(wildcard ${LIMINEDATADIR})
+LIMINECFG = limine.cfg
+LIMINEDATA = $(wildcard limine_data/*)
 STARTUPNSH = ./startup.nsh
 
 # Image properties
 IMAGESIZE = 10000 # The size of the OS image, in KiB
 
-# QEMU properties
-OVMFDIR = ./OVMF
+ISOROOT = isoroot
+
+QEMU_FLAGS = -m 512M -cpu qemu64 -net none
 
 .PHONY: buildimg
 buildimg: 
-	if [!-d "build"]; then @mkdir build; fi
+	@mkdir -p build
 	@echo "Creating an empty image..."
 # Create a file with size 512kB containin zeros
 	@dd if=/dev/zero of=$(BUILDDIR)/$(OSNAME).img bs=1024 count=$(IMAGESIZE) 2>/dev/null
@@ -55,21 +54,58 @@ buildimg:
 	@echo "Copying kernel ${KERNELDATA} into image..."
 	@mcopy -i $(BUILDDIR)/$(OSNAME).img $(KERNELDATA) ::/KERNEL/DATA
 
+$(ISOROOT): $(KERNELDATA) $(LIMINECFG) $(LIMINEDATA) $(LIMINEDIR) $(KERNELBIN)
+	@mkdir -p $(ISOROOT)  $(ISOROOT)/bootloader/data  $(ISOROOT)/kernel/data
+	@cp -v 	$(LIMINEDATA)  $(ISOROOT)/bootloader/data
+	@cp -v 	$(LIMINECFG)   $(ISOROOT)/
+	@cp -v 	$(LIMINEDIR)/limine.sys \
+		$(LIMINEDIR)/limine-cd.bin \
+		$(LIMINEDIR)/limine-cd-efi.bin  $(ISOROOT)/
+	@cp -v 	$(KERNELBIN)  $(ISOROOT)/kernel/kernel.elf
+	@cp -v 	$(KERNELDATA)  $(ISOROOT)/kernel/data
+	@echo Created a temporary directory with the OS files.
+
+.PHONY: buildiso
+buildiso: $(ISOROOT)
+# Create the ISO with the efi bootloader
+	@echo Creating the ISO with the efi bootloader...
+	xorriso -as mkisofs \
+		-b limine-cd.bin \
+		-no-emul-boot -boot-load-size 4 -boot-info-table \
+		--efi-boot limine-cd-efi.bin \
+		-efi-boot-part --efi-boot-image --protective-msdos-label \
+		$(ISOROOT) -o $(OSNAME).iso
+
+# Add the legacy bootloader
+	@echo Adding legacy bootloader into the ISO...
+	$(LIMINEDIR)/limine-deploy $(OSNAME).iso
+
+	@echo Cleaning up...
+	@rm -R $(ISOROOT)
+
+	@echo Finished!
+
+
+$(KERNELBIN):
+	make -C kernel clean all
+
+$(LIMINEDIR):
+	git clone https://github.com/limine-bootloader/limine.git --branch=v3.0-branch-binary --depth=1
+	make -C limine
+
 .PHONY: run
-run:
-	@qemu-system-x86_64 -m 256M -cpu qemu64 -net none \
-	-drive file=$(BUILDDIR)/$(OSNAME).img \
-	-drive if=pflash,format=raw,unit=0,file="$(OVMFDIR)/OVMF_CODE-pure-efi.fd",readonly=on \
-	-drive if=pflash,format=raw,unit=1,file="$(OVMFDIR)/OVMF_VARS-pure-efi.fd"
+run:	
+	@echo Running kernel on QEMU
+	qemu-system-x86_64 $(QEMU_FLAGS) \
+	-bios /usr/share/ovmf/OVMF.fd \
+	-cdrom $(OSNAME).iso
 
 .PHONY: qemudebug
 qemudebug:
-	@qemu-system-x86_64 -s -S -m 256M -cpu qemu64 -net none \
-	-drive format=raw,file=$(BUILDDIR)/$(OSNAME).img  \
-	-drive if=pflash,format=raw,unit=0,file="$(OVMFDIR)/OVMF_CODE-pure-efi.fd",readonly=on \
-	-drive if=pflash,format=raw,unit=1,file="$(OVMFDIR)/OVMF_VARS-pure-efi.fd" 
 	@echo Launched QEMU with GDB server on localhost:1234"
-
+	@qemu-system-x86_64 -s -S $(QEMU_FLAGS) \
+	-bios /usr/share/ovmf/OVMF.fd \
+	-cdrom $(OSNAME.iso
 
 .PHONY: debug
 debug:
