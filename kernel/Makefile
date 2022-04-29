@@ -33,6 +33,11 @@ INCLUDESDIR     = include
 BUILDDIR        = bin
 OBJDIR          = lib
 
+DIRS += SRCDIR
+DIRS += INCLUDESDIR
+DIRS += BUILDDIR
+DIRS += OBJDIR
+
 # User controllable CFLAGS.
 CFLAGS ?= -Wall -Wunused-variable -Wunused-parameter -Wextra -O0 -pipe -g 
 
@@ -79,7 +84,7 @@ HEADER_DEPS 	= $(OBJS:.cpp=.d)
 
 # Default target.
 .PHONY: all
-all: $(KERNEL)
+all: $(DIRS) $(KERNEL)
 
 stivale2.h:
 	curl https://raw.githubusercontent.com/stivale/stivale/master/stivale2.h -o $(INCLUDESDIR)/$@
@@ -88,6 +93,9 @@ stivale2.h:
 $(KERNEL): $(OBJS)
 	@echo "--> Linking $^ to $@"
 	@$(LD) $(addprefix $(OBJDIR)/, $(notdir $^)) $(LDFLAGS) $(INTERNALLDFLAGS) -o $(BUILDDIR)/$@
+
+$(DIRS):
+	@mkdir -p $($@)
 
 %_asm.o: %.asm
 	@echo "--> Assembling $^ to $@"
