@@ -102,10 +102,10 @@ run:
 
 .PHONY: qemudebug
 qemudebug:
-	@echo Launched QEMU with GDB server on localhost:1234"
+	@echo Launched QEMU with GDB server on localhost:1234
 	@qemu-system-x86_64 -s -S $(QEMU_FLAGS) \
 	-bios /usr/share/ovmf/OVMF.fd \
-	-cdrom $(OSNAME.iso
+	-cdrom $(OSNAME).iso
 
 .PHONY: debug
 debug:
