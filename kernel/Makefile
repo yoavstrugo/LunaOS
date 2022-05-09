@@ -50,6 +50,8 @@ ASMFLAGS ?= -f elf64
 override INTERNALCFLAGS :=   \
 	-I $(INCLUDESDIR)    \
 	-std=c++98           \
+	-Wno-conversion-null \
+	-Wno-unused-parameter \
 	-ffreestanding       \
 	-masm=intel			 \
 	-fno-stack-protector \
@@ -101,9 +103,11 @@ $(DIRS):
 	@echo "--> Assembling $^ to $@"
 	@$(ASMC) $(ASMFLAGS) $< -o $(OBJDIR)/$@
 
-# requests.o exceptions.o : requests.cpp exceptions.cpp
-# 	@echo "--> Compiling $^ to $@"
-# 	@$(CC) $(CFLAGS) -mgeneral-regs-only $(INTERNALCFLAGS) -c $< -o $(OBJDIR)/$@
+requests.o: requests.cpp
+exceptions.o: exceptions.cpp
+requests.o exceptions.o:
+	@echo "--> Compiling with interrupt flags $^ to $@"
+	@$(CC) $(CFLAGS) -mgeneral-regs-only -mno-red-zone $(INTERNALCFLAGS) -c $< -o $(OBJDIR)/$@
 
 %.o: %.cpp stivale2.h
 	@echo "--> Compiling $^ to $@"
