@@ -82,6 +82,13 @@ void memset(char *addr, char value, size_t len) {
 char _toStringOut[MAX_STRING_LENGTH];
 
 void _toString(uint64_t num, char *array) {
+    // Special case where num is 0
+    if (num == 0) {
+        _toStringOut[0] = '0';
+        _toStringOut[1] = '\0';
+        return;
+    }
+
     // Calculate the length of the number
     uint8_t length = 0;
     {
