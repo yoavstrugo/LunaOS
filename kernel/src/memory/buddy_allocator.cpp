@@ -32,7 +32,7 @@ k_buddyallocator::k_buddyallocator(virtual_address_t base, size_t size, uint8_t 
     this->maxOrder = buddyallocatorFindOrder(size, minBlockSize);
     this->minBlockSize = minBlockSize;
     this->base = base;
-    this->size = size;
+    this->size = alignToPowerOfTwo(size);
 
     // Reset all the lists
     for (uint8_t i = 0; i <= this->maxOrder; i++)
