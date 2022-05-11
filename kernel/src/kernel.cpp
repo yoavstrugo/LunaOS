@@ -14,13 +14,14 @@
 
 #include <gdt/gdt.hpp>
 #include <interrupts/interrupts.hpp>
+#include <interrupts/pic.hpp>
 
-#include <memory/PhysicalMemoryManager.hpp>
-#include <memory/BitmapAllocator.hpp>
-#include <memory/VirtualMemoryManager.hpp>
-#include <memory/paging.hpp>
 #include <memory/memory.hpp>
 #include <memory/buddy_allocator.hpp>
+#include <memory/heap.hpp>
+
+#include <system/acpi/rsdp.hpp>
+#include <system/acpi/acpi.hpp>
 
 // We need to tell the stivale bootloader where we want our stack to be.
 // We are going to allocate our stack as an array in .bss.
@@ -84,35 +85,62 @@ static struct stivale2_header stivale_hdr = {
 
 // The following will be our kernel's entry point.
 extern "C" void kernelMain(stivale2_struct *stivale2Struct) {
-    kernelInitiallize(stivale2Struct);
-
-    kernelHalt();
+    kernelInitialize(stivale2Struct);
+    for(;;);
+    // kernelHalt();
 }
 
-void kernelInitiallize(stivale2_struct *stivaleInfo) {
-    loggerInitiallize(stivaleInfo);
-    logDebugn("Logger has been initiallized.");
+void kernelInitialize(stivale2_struct *stivaleInfo) {
+    loggerInitialize(stivaleInfo);
+    logDebugn("Logger has been initialized.");
 
-    gdtInitiallize();
+    logDebugn("%! Stack is located at %x", "[STACK]", &stack);
 
-    interruptsInitiallize();
+    gdtInitialize();
 
-    // asm("int $0x0E");
+    interruptsInitialize();
+    picRemapIRQs();
+    picUnsetMask(1);
+
+    // asm("int 0x21");
     
-    memoryInitiallize(stivaleInfo);
-    logDebugn("Memory has been initiallized.");
+    memoryInitialize(stivaleInfo);
+    logDebugn("Memory has been initialized.");
 
-    k_buddyallocator buddyAllocator = k_buddyallocator(0x100000, 0x10000);
-    virtual_address_t ptr = buddyAllocator.allocate(0x1000);
-    virtual_address_t ptr1 = buddyAllocator.allocate(100);
-    virtual_address_t ptr2 = buddyAllocator.allocate(510);
-    virtual_address_t ptr3 = buddyAllocator.allocate(1002);
+    stivale2_struct_tag_rsdp *rsdpTag = (stivale2_struct_tag_rsdp *)stivale2_get_tag(stivaleInfo, STIVALE2_STRUCT_TAG_RSDP_ID);
+    if (rsdpTag == NULL)
+        kernelPanic("%! couldn't be found!", "RSDP");
+    
+    if(rsdpValidate((k_rsdp_descriptor *)rsdpTag->rsdp)) {
+        k_rsdp_descriptor_20 * rsdp = (k_rsdp_descriptor_20 *)rsdpTag->rsdp;
+        logDebugn("%! RSDP is valid. R/XSDT is in 0x%64x", "[ACPI]", rsdp->xsdtAddress);
+        if(acpiValidateHeader(&((k_xsdt *)(rsdp->xsdtAddress))->h)) {
+            logDebugn("%! SDT header checks up!", "ACPI");
+        }
+    }
 
-    buddyAllocator.deallocate(ptr1);
-    buddyAllocator.deallocate(ptr3);
+    heapAllocate(0x1000);
+    heapAllocate(0x10000);
+    heapAllocate(0x10000);
+    heapAllocate(0x10000);
+    heapAllocate(0x10000);
+    heapAllocate(0x100000);
+
+
+    // k_buddyallocator buddyAllocator = k_buddyallocator(0x100000, 0x10000);
+    // virtual_address_t ptr = buddyAllocator.allocate(0x1000);
+    // virtual_address_t ptr1 = buddyAllocator.allocate(100);
+    // virtual_address_t ptr2 = buddyAllocator.allocate(510);
+    // virtual_address_t ptr3 = buddyAllocator.allocate(1002);
+
+
+
+    // buddyAllocator.deallocate(ptr1);
+    // buddyAllocator.deallocate(ptr3);
 }
 
 void kernelPanic(const char *msg, ...) {
+    logInfon("%!", "-+== KERNEL PANIC ==+-");
     va_list valist;
     va_start(valist, msg);
     loggerPrintDirect(msg, valist);
