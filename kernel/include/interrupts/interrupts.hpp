@@ -1,6 +1,6 @@
 #pragma once
 
-void interruptsInitiallize();
+void interruptsInitialize();
 
 /**
  * @brief Installs all of the interrupts

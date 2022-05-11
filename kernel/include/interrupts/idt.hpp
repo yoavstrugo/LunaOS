@@ -37,7 +37,7 @@ void idtCreateEntry(uint8_t idx, uint64_t offset, uint16_t segmentSelector, uint
  * @brief Create the IDT descriptor
  * 
  */
-void idtInitiallize();
+void idtInitialize();
 
 /**
  * @brief Print all the information about the IDT and loads it into gdtr.

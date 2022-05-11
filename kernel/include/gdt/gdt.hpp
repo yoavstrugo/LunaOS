@@ -39,10 +39,10 @@ struct k_gdt_entry {
 void gdtCreateEntry(uint8_t idx, uint32_t base, uint32_t limit, uint8_t accessByte, uint8_t flags);
 
 /**
- * @brief Initiallizes the GDT, and loads it into gdtr.
+ * @brief Initializes the GDT, and loads it into gdtr.
  * 
  */
-void gdtInitiallize();
+void gdtInitialize();
 
 /**
  * @brief Loads the GDT into the lgdt register, defined with assembly

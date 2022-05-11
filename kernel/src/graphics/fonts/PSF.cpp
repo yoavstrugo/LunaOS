@@ -1,6 +1,6 @@
 #include <PSF.hpp>
 
-void PSF_Font::initiallizePSFFont(void *start_addr, void *end_addr) {
+void PSF_Font::initializePSFFont(void *start_addr, void *end_addr) {
     this->_start_addr = start_addr;
     this->_end_addr = end_addr;
     this->_header = (PSF_header*)start_addr;

@@ -4,7 +4,7 @@
 #include <stdarg.h>
 #include <logger/logger_macros.hpp>
 
-void loggerInitiallize(stivale2_struct *stivale2Struct);
+void loggerInitialize(stivale2_struct *stivale2Struct);
 
 void loggerPrintDirect(const char *msg, va_list valist);
 

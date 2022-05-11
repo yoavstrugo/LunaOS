@@ -16,7 +16,7 @@ void idtCreateEntry(uint8_t idx, uint64_t offset, uint16_t segmentSelector, uint
     idt[idx].zero = 0;
 }
 
-void idtInitiallize() {
+void idtInitialize() {
     idtDescriptor.offset = (uint64_t)&idt;
     idtDescriptor.size = (sizeof(k_idt_entry) * K_IDT_SIZE) - 1;
 }

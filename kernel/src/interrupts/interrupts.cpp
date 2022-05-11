@@ -6,8 +6,8 @@
 #include <interrupts/requests.hpp>
 #include <kernel.hpp>
 
-void interruptsInitiallize() {
-    idtInitiallize();
+void interruptsInitialize() {
+    idtInitialize();
     idtLoad();
     interruptsInstallRoutines();
     interruptsEnable();

@@ -14,7 +14,7 @@ void gdtCreateEntry(uint8_t idx, uint32_t base, uint32_t limit, uint8_t accessBy
     gdt[idx].baseHigh = (uint8_t)((base >> 24) & 0xFF); // last 8 bits of base
 }
 
-void gdtInitiallize() {
+void gdtInitialize() {
     // Create the table entries
     gdtCreateEntry(0 ,0x0, 0x00000, 0x00, 0x0); // null
     gdtCreateEntry(1 ,0x0, 0xFFFFF, 0x9A, 0xA); // kernel code

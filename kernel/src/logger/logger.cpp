@@ -7,14 +7,14 @@
 static PSF_Font font;
 static Renderer renderer;
 
-void loggerInitiallize(stivale2_struct *stivaleInfo) {
+void loggerInitialize(stivale2_struct *stivaleInfo) {
     stivale2_struct_tag_framebuffer *framebuffer = (stivale2_struct_tag_framebuffer *)stivale2_get_tag(stivaleInfo, STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID);
 
     stivale2_struct_tag_modules *modules = (stivale2_struct_tag_modules *)stivale2_get_tag(stivaleInfo, STIVALE2_STRUCT_TAG_MODULES_ID);
     stivale2_module *fontModule = stivale2_get_module(modules, "psf_font");
 
-    font.initiallizePSFFont((void *)fontModule->begin, (void *)fontModule->end);
-    renderer.initiallizeRenderer(framebuffer, &font);
+    font.initializePSFFont((void *)fontModule->begin, (void *)fontModule->end);
+    renderer.initializeRenderer(framebuffer, &font);
 }
 
 void loggerPrintDirect(const char *msg, va_list valist) {
