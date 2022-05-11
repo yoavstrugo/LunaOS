@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <PSF.hpp>
 #include <stdarg.h>
-#include <strings.hpp>
+
 
 #define K_HEADER_FG 0xF85E2B
 #define K_HEADER_BG 0x000000
@@ -17,7 +17,7 @@ struct Point {
 
 class Renderer {
     public:
-        void initiallizeRenderer(stivale2_struct_tag_framebuffer* framebuffer, PSF_Font *font);
+        void initializeRenderer(stivale2_struct_tag_framebuffer* framebuffer, PSF_Font *font);
         void printf(const char* format, va_list arg);
         
         // Print a character
@@ -34,7 +34,8 @@ class Renderer {
         color_t _fg;
         color_t _bg;
 
-        void _advance_cursor();
+        void scrollUp();
+        void _advanceCursor();
         void _moveCursorDown();
         void _print(const char *str);
 

@@ -1,9 +1,11 @@
 #include <Renderer.hpp>
 
+#include <strings.hpp>
+
 #define PIXEL uint32_t   /* pixel pointer */
 #define TABSIZE 4
 
-void Renderer::initiallizeRenderer(stivale2_struct_tag_framebuffer* framebuffer, PSF_Font *font) {
+void Renderer::initializeRenderer(stivale2_struct_tag_framebuffer* framebuffer, PSF_Font *font) {
     this->framebuffer = framebuffer;
     this->font = font;
 
@@ -11,6 +13,20 @@ void Renderer::initiallizeRenderer(stivale2_struct_tag_framebuffer* framebuffer,
     this->cursor.Y = 0;
 
     this->defaultColor();
+}
+
+void Renderer::scrollUp() {
+    #define BPP         this->framebuffer->framebuffer_bpp / 8
+    #define WIDTH       this->framebuffer->framebuffer_width
+    #define LINE_HEIGHT this->font->header()->height
+    #define HEIGHT      this->framebuffer->framebuffer_height
+    #define ADDR        this->framebuffer->framebuffer_addr
+    memcpy(
+        (void *)ADDR,
+        (void *)(ADDR + WIDTH * BPP * LINE_HEIGHT),
+        WIDTH * BPP * HEIGHT
+    );
+    this->cursor.Y -= this->font->header()->height;
 }
 
 void Renderer::printf(const char *format, va_list arg) {
@@ -85,11 +101,16 @@ void Renderer::_print(const char *str) {
     }
 }
 
-void Renderer::_advance_cursor() {
+void Renderer::_advanceCursor() {
     this->cursor.X += this->font->header()->width;
     if (this->cursor.X >= this->framebuffer->framebuffer_width) {
         this->cursor.X = 0;
         this->cursor.Y += this->font->header()->height;
+
+        if (this->cursor.Y + this->font->header()->height >= this->framebuffer->framebuffer_height) {
+            scrollUp();
+            this->cursor.Y -= this->font->header()->height;
+        }
     }
 }
 
@@ -100,15 +121,18 @@ void Renderer::putchar(unsigned short int c) {
             // New line
             this->cursor.Y += this->font->header()->height;
             this->cursor.X = 0;
+            if (this->cursor.Y + this->font->header()->height >= this->framebuffer->framebuffer_height) {
+                scrollUp();
+            }
             return;
         case '\t':
             // Horizontal tab
-            for (int i = 0; i < TABSIZE; i++) this->_advance_cursor();
+            for (int i = 0; i < TABSIZE; i++) this->_advanceCursor();
             return;
     }
 
     this->_insert_char(c, this->cursor.X, this->cursor.Y);
-    this->_advance_cursor();
+    this->_advanceCursor();
 }
 
 void Renderer::defaultColor() {
@@ -137,11 +161,11 @@ void Renderer::_insert_char (
         c = unicode[c];
     }
 
-    uint64_t font_offset = (uint64_t)font->header() + font->header()->headersize;
+    uint64_t fontOffset = (uint64_t)font->header() + font->header()->headersize;
 
     /* get the glyph for the character. If there's no
        glyph for a given character, we'll display the first glyph. */
-    unsigned char *glyph = (unsigned char *)(font_offset + 
+    unsigned char *glyph = (unsigned char *)(fontOffset + 
                            (c > 0 && c < font->header()->length ? c : 0) * font->header()->charsize);
 
     /* calculate the upper left corner on screen where we want to display.
