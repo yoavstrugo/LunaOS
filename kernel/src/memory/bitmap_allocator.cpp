@@ -1,4 +1,4 @@
-#include <memory/BitmapAllocator.hpp>
+#include <memory/bitmap_allocator.hpp>
 
 #include <memory/paging.hpp>
 
@@ -8,9 +8,9 @@ BitmapAllocator::BitmapAllocator() {
     this->_reservedMemory = 0;
 }
 
-void BitmapAllocator::initiallize(stivale2_struct_tag_memmap *memmapStruct) {
-    if (this->_isInitiallized) return;    
-    this->_isInitiallized = true;
+void BitmapAllocator::initialize(stivale2_struct_tag_memmap *memmapStruct) {
+    if (this->_isInitialized) return;    
+    this->_isInitialized = true;
 
     // Before we start mapping the memory we have to calculate the memory size
     uint64_t memorySize = countMemory(memmapStruct);
@@ -86,7 +86,7 @@ void BitmapAllocator::initiallize(stivale2_struct_tag_memmap *memmapStruct) {
         this->_lockBlock(bitmapAddress + i * PAGE_SIZE);  
 }
 
-void BitmapAllocator::freeBlock(physical_address_t blockAddr) {
+void BitmapAllocator::freePage(physical_address_t blockAddr) {
     this->_freeBlock(blockAddr);
 }
 
@@ -106,7 +106,7 @@ uint64_t BitmapAllocator::reservedMemory() {
     return this->_reservedMemory;
 }
 
-physical_address_t BitmapAllocator::allocateBlock() {
+physical_address_t BitmapAllocator::allocatePage() {
     // TODO: do something if no free block 
     physical_address_t blockAddr = this->_nextBlock();
     this->_lockBlock(blockAddr);
@@ -118,7 +118,7 @@ void BitmapAllocator::_lockBlock(physical_address_t blockAddr) {
     // if its not
 
     // TODO: something if not initiallized
-    if (!this->_isInitiallized) return;
+    if (!this->_isInitialized) return;
 
     if (this->_memoryBitmap[blockAddr / PAGE_SIZE]) {
         this->_freeMemory -= PAGE_SIZE;
@@ -133,7 +133,7 @@ void BitmapAllocator::_freeBlock(physical_address_t blockAddr) {
     // if its not
 
     // TODO: something if not initiallized
-    if (!this->_isInitiallized) return;
+    if (!this->_isInitialized) return;
 
     if (!this->_memoryBitmap[blockAddr / PAGE_SIZE]) {
         this->_freeMemory += PAGE_SIZE;
@@ -145,7 +145,7 @@ void BitmapAllocator::_freeBlock(physical_address_t blockAddr) {
 
 physical_address_t BitmapAllocator::_nextBlock() {
     // TODO: something if not initiallized
-    if (!this->_isInitiallized) return 0;
+    if (!this->_isInitialized) return 0;
 
     for (uint64_t i = 0; i < this->_memoryBitmap.getSize(); i++)
         if (this->_memoryBitmap[i]) return i * PAGE_SIZE;

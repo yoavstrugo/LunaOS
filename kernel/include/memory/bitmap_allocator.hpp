@@ -20,10 +20,10 @@ class BitmapAllocator : public PhysicalMemoryManager {
          * 
          * @param memmapStruct      The memory map given by stivale
          */
-        void initiallize(stivale2_struct_tag_memmap *memmapStruct);
+        void initialize(stivale2_struct_tag_memmap *memmapStruct);
 
-        physical_address_t allocateBlock();
-        void freeBlock(physical_address_t blockAddr);
+        physical_address_t allocatePage();
+        void freePage(physical_address_t blockAddr);
         
         uint64_t totalMemory();
         uint64_t freeMemory();
@@ -65,7 +65,7 @@ class BitmapAllocator : public PhysicalMemoryManager {
         uint64_t _usedMemory;
         uint64_t _reservedMemory;
 
-        bool _isInitiallized;
+        bool _isInitialized;
 
         Bitmap _memoryBitmap;
 };
