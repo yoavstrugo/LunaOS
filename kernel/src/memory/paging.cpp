@@ -19,7 +19,7 @@ void pagingMapPageInSpace( virtual_address_t virt, physical_address_t phys,
 
     if (!(pml4e & PAGETABLE_PRESENT)) {
         pml4e |= flags.pml4Flags;
-        pdpt = (pagetable_entry_t *)memoryPhysicalAllocator.allocateBlock();
+        pdpt = (pagetable_entry_t *)memoryPhysicalAllocator.allocatePage();
         memset((char *)pdpt, 0, PAGE_SIZE);
         pml4e |= (uint64_t)pdpt;
         pml4[PML4_INDEXER(virt)] = pml4e;
@@ -40,7 +40,7 @@ void pagingMapPageInSpace( virtual_address_t virt, physical_address_t phys,
     
     if (!(pdpte & PAGETABLE_PRESENT)) {
         pdpte |= flags.pdptFlags;
-        pd = (pagetable_entry_t *)memoryPhysicalAllocator.allocateBlock();
+        pd = (pagetable_entry_t *)memoryPhysicalAllocator.allocatePage();
         memset((char *)pd, 0, PAGE_SIZE);
         pdpte |= (uint64_t)pd;
         pdpt[PDPT_INDEXER(virt)] = pdpte;
@@ -61,7 +61,7 @@ void pagingMapPageInSpace( virtual_address_t virt, physical_address_t phys,
 
     if (!(pde & PAGETABLE_PRESENT)) {
         pde |= flags.pdFlags;
-        pt = (pagetable_entry_t *)memoryPhysicalAllocator.allocateBlock();
+        pt = (pagetable_entry_t *)memoryPhysicalAllocator.allocatePage();
         memset((char *)pt, 0, PAGE_SIZE);
         pde |= (uint64_t)pt;
         pd[PD_INDEXER(virt)] = pde;
@@ -139,7 +139,7 @@ void pagingUnmapPage(virtual_address_t virt) {
                     // Check if PT is empty now
                     if (pagingIsPagetableEmpty(pt)) {
                         // Free the PT space
-                        memoryPhysicalAllocator.freeBlock((physical_address_t)pt);
+                        memoryPhysicalAllocator.freePage((physical_address_t)pt);
 
                         // Unset the PRESENT bit in the PD entry
                         UNSET_FLAG(pde, PAGETABLE_PRESENT);
@@ -148,7 +148,7 @@ void pagingUnmapPage(virtual_address_t virt) {
                         // Check if PD is empty now
                         if (pagingIsPagetableEmpty(pd)) {
                             // Free the PD space
-                            memoryPhysicalAllocator.freeBlock((physical_address_t)pd);
+                            memoryPhysicalAllocator.freePage((physical_address_t)pd);
 
                             // Unset the PRESENT bit in the PDPT entry
                             UNSET_FLAG(pdpte, PAGETABLE_PRESENT);
@@ -157,7 +157,7 @@ void pagingUnmapPage(virtual_address_t virt) {
                             // Check if PDPT is empty now
                             if (pagingIsPagetableEmpty(pdpt)) {
                                 // Free the PDPT space
-                                memoryPhysicalAllocator.freeBlock((physical_address_t)pdpt);
+                                memoryPhysicalAllocator.freePage((physical_address_t)pdpt);
 
                                 // Unset the PRESENT bit in the PML4 entry
                                 UNSET_FLAG(pml4e, PAGETABLE_PRESENT);
@@ -171,10 +171,10 @@ void pagingUnmapPage(virtual_address_t virt) {
     }
 }
 
-void pagingInitiallize(physical_address_t kernelBase, virtual_address_t hhdm) {
-    physical_address_t pml4Addr = memoryPhysicalAllocator.allocateBlock();
+void pagingInitialize(physical_address_t kernelBase, virtual_address_t hhdm) {
+    physical_address_t pml4Addr = memoryPhysicalAllocator.allocatePage();
 
-    // Idenity map first 4GiB of memory
+    // Identity map first 4GiB of memory
     pagingMapMemoryInTable(0x0000000000000000, 0x0000000000000000, 4 * GiB_SIZE, pml4Addr, PAGING_DEFAULT_FLAGS, true);
 
     // Map 4GiB from the HHDM

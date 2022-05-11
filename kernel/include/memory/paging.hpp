@@ -22,14 +22,23 @@ const uint64_t HHDM  =  0xffff800000000000;
 
 // TODO: merge flags
 // FLAGS FOR A PAGE TABLE
-const uint64_t PAGETABLE_PRESENT      = 1;  
+
+// Present; must be 1 to reference another page table.
+const uint64_t PAGETABLE_PRESENT      = 1;
+// Read/write; if 0, writes may not be allowed to the memory region controlled by this entry.  
 const uint64_t PAGETABLE_READWRITE    = 1 << 1;
+// User/supervisor; if 0, user-mode accesses are not allowed to the memory region controlled by this entry.
 const uint64_t PAGETABLE_USERSUPER    = 1 << 2;
+// Page-level write-through; indirectly determines the memory type used to access the pagetable referenced by this entry.
 const uint64_t PAGETABLE_WRITETHROUGH = 1 << 3;
+// Page-level cache disable; indirectly determines the memory type used to access the pagetable referenced by this entry.
 const uint64_t PAGETABLE_CACHE        = 1 << 4;
+// Accessed; indicates whether this entry has been used for linear-address translation
 const uint64_t PAGETABLE_ACCESSED     = 1 << 5;
 const uint64_t PAGETABLE_PAGE_SIZE    = 1 << 7;
+// For ordinary paging, ignored; for HLAT paging, restart (if 1, linear-address translation is restarted with ordinary paging)
 const uint64_t PAGETABLE_ORDINARY     = (uint64_t)1 << 11;
+// Execution disabled; if 1, instruction fetches are not allowed from the memory region controlled by this entry.
 const uint64_t PAGETABLE_EXEC         = (uint64_t)1 << 63;
 
 // FLAGS FOR A PAGE   
@@ -77,7 +86,7 @@ const k_paging_flags PAGING_DEFAULT_FLAGS = {
  * @param virt  The virtual address 
  * @param phys  The physical address
  * @param pml4eFlags    Flags for the Page Map Level 4 entry.
- * @param pdpteFlags    Flags for the Page Directry Pointer Table entry.
+ * @param pdpteFlags    Flags for the Page Directory Pointer Table entry.
  * @param pdeFlags      Flags for the Page Directory entry.
  * @param pteFlags      Flage for the Page Table entry.
  * @param override Whether or not to override if the virtual address is already mapped.
@@ -96,10 +105,10 @@ void pagingMapPage  (
 void pagingUnmapPage(virtual_address_t virt);
 
 /**
- * @brief Initiallize paging with some mappings.
+ * @brief Initialize paging with some mappings.
  * 
  */
-void pagingInitiallize(physical_address_t kernelBase, virtual_address_t hhdm);
+void pagingInitialize(physical_address_t kernelBase, virtual_address_t hhdm);
 
 /**
  * @brief Switch the address space, by replacing the PML4 with another one.
