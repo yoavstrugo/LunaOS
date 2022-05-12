@@ -11,7 +11,7 @@ k_virtual_address_range_allocator::k_virtual_address_range_allocator() {
 
 void k_virtual_address_range_allocator::addRange(virtual_address_t start, virtual_address_t end) {
     // TODO: check that start and end are page aligned
-    k_address_range_header *addressHeader = new k_address_range_header;
+    k_address_range_header *addressHeader = new k_address_range_header();
 
     addressHeader->base = start;
     addressHeader->pages = (end - start) / PAGE_SIZE;
@@ -42,7 +42,7 @@ void k_virtual_address_range_allocator::addRange(virtual_address_t start, virtua
         this->head = addressHeader;
     }
 
-    // TODO: merge ranges
+    this->mergeAll();
 }
 
 virtual_address_t k_virtual_address_range_allocator::allocateRange(uint64_t pages) {
@@ -65,7 +65,7 @@ virtual_address_t k_virtual_address_range_allocator::allocateRange(uint64_t page
     range->pages = pages;
 
     if (range->pages > pages) {
-        k_address_range_header *split = new k_address_range_header;
+        k_address_range_header *split = new k_address_range_header();
         split->used = false;
         split->next = range->next;
         split->pages = range->pages - pages;
@@ -75,4 +75,51 @@ virtual_address_t k_virtual_address_range_allocator::allocateRange(uint64_t page
     }
 
     return range->base;
+}
+
+void k_virtual_address_range_allocator::mergeAll() {
+    k_address_range_header *range = this->head;
+
+    while (range && range->next) {
+        if (!range->used && 
+            !range->next->used && 
+            (range->base + range->pages * PAGE_SIZE == range->next->base)) 
+        {
+            // Ranges aren't in use, and they continue each other
+            // therefore we can merge them
+            range->pages += range->next->pages;
+            range->next = range->next->next;
+
+            logDebugn("%! Successfully merged ranges from %d pages to %d pages.", 
+                "[Virtual Address Range Allocator]", 
+                range->pages - range->next->pages, 
+                range->pages);
+
+            // no longer need to next range header
+            delete range->next;
+        }
+
+        range = range->next;
+    }
+}
+
+void k_virtual_address_range_allocator::freeRange(virtual_address_t base) {
+    // find the range to free
+    k_address_range_header *range = this->head;
+
+    while(range && range->base != base) 
+        range = range->next;
+
+    if (!range) {
+        logDebugn("%! Tried to free a non-existing range, base 0x%64x.", "[Virtual Address Range Allocator]", base);
+        return;
+    } 
+    
+    if (!range->used) {
+        logDebugn("%! Tried to free a free range, base 0x%64x.", "[Virtual Address Range Allocator]", base);
+        return;
+    }
+
+    range->used = false;
+    this->mergeAll();
 }

@@ -25,9 +25,6 @@ struct k_address_range_header {
  *          with a specific number of pages.
  */
 struct k_virtual_address_range_allocator {
-    // The head of the address range linked-list
-    k_address_range_header *head;
-
     k_virtual_address_range_allocator();
 
     /**
@@ -51,4 +48,13 @@ struct k_virtual_address_range_allocator {
      * @brief Free an allocated virtual range.
      */
     void freeRange(virtual_address_t base);
+
+    private:
+        // The head of the address range linked-list
+        k_address_range_header *head;
+
+        /**
+         * @brief Loop over the list and try to merge the address ranges
+         */
+        void mergeAll();
 };
