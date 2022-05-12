@@ -56,7 +56,7 @@ bool heapExpand() {
     if (!heapInitialized) 
         kernelPanic("%! An attempt to expand an uninitialized heap has occurred.", "[Kernel Heap]");
 
-    if (heapEnd + K_HEAP_EXPANSION_STEP > K_HEAP_MAX_EXPANSION) {
+    if (heapEnd + K_HEAP_EXPANSION_STEP > K_CONST_HEAP_MAX_EXPANSION) {
         logWarnn("%! Kernel heap has ran out of memory", "[Kernel Heap]");
         return false;
     }
