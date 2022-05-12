@@ -54,6 +54,8 @@ const uint64_t PAGE_GLOBAL       = (uint64_t)1 << 8;
 const uint64_t PAGE_ORDINARY     = (uint64_t)1 << 11;
 const uint64_t PAGE_EXEC         = (uint64_t)1 << 63;
 
+#define PAGING_ALIGN_PAGE_DOWN(v)   ((v) & ~(PAGE_SIZE - 1))
+
 struct k_paging_flags {
     pagetable_flags_t   pml4Flags;
     pagetable_entry_t   pdptFlags;
