@@ -4,140 +4,211 @@
 #include <kernel.hpp>
 #include <strings.hpp>
 #include <types.hpp>
+#include <logger/logger.hpp>
+
+bool pagingDeepDebug = false;
 
 // TODO: checking that the allocateBlock() returned a valid address
 // TODO: checking addresses alignment
-void pagingMapPageInSpace( virtual_address_t virt, physical_address_t phys,
-                    physical_address_t pml4Addr,
-                    k_paging_flags flags,
-                    bool override) {
-    
+void pagingMapPageInSpace(virtual_address_t virt, physical_address_t phys,
+                          physical_address_t pml4Addr,
+                          k_paging_flags flags,
+                          bool override)
+{
+
+    if (pagingDeepDebug)
+        logDebugn("%! Starting mapping of page \
+                    \n0x%64x to 0x%64x, at PML4 0x%64x:",
+                  "[Paging]", virt, phys, pml4Addr);
+
     // Creating PDPT
     pagetable_entry_t *pml4 = (pagetable_entry_t *)pml4Addr;
     pagetable_entry_t pml4e = pml4[PML4_INDEXER(virt)];
+    if (pagingDeepDebug)
+        logDebugn("\t- PML4 entry indexed %d", PML4_INDEXER(virt));
     pagetable_entry_t *pdpt;
 
-    if (!(pml4e & PAGETABLE_PRESENT)) {
+    if (!(pml4e & PAGETABLE_PRESENT))
+    {
         pml4e |= flags.pml4Flags;
         pdpt = (pagetable_entry_t *)memoryPhysicalAllocator.allocatePage();
         memset((char *)pdpt, 0, PAGE_SIZE);
         pml4e |= (uint64_t)pdpt;
         pml4[PML4_INDEXER(virt)] = pml4e;
-    } else {
+        if (pagingDeepDebug)
+            logDebugn("\t- PDPT was created at 0x%64x", pdpt);
+    }
+    else
+    {
         // Page directory pointer table is present, retrieve the address
         pdpt = (pagetable_entry_t *)ADDRESS_EXCLUDE(pml4e);
         // If override is on we will override the flags of the table
-        if (override) { 
+        if (override)
+        {
             pml4e &= (~((pagetable_entry_t)0)) << 12;
-            pml4e |= flags.pml4Flags; 
+            pml4e |= flags.pml4Flags;
             pml4[PML4_INDEXER(virt)] = pml4e;
+            if (pagingDeepDebug)
+                logDebugn("\t- PDPT was overriden at 0x%64x", pdpt);
+        }
+        else
+        {
+            if (pagingDeepDebug)
+                logDebugn("\t- PDPT was already at 0x%64x", pdpt);
         }
     }
 
     // Creating PD
     pagetable_entry_t pdpte = pdpt[PDPT_INDEXER(virt)];
+    if (pagingDeepDebug)
+        logDebugn("\t- PDPT entry indexed %d", PDPT_INDEXER(virt));
     pagetable_entry_t *pd;
-    
-    if (!(pdpte & PAGETABLE_PRESENT)) {
+
+    if (!(pdpte & PAGETABLE_PRESENT))
+    {
         pdpte |= flags.pdptFlags;
         pd = (pagetable_entry_t *)memoryPhysicalAllocator.allocatePage();
         memset((char *)pd, 0, PAGE_SIZE);
         pdpte |= (uint64_t)pd;
         pdpt[PDPT_INDEXER(virt)] = pdpte;
-    } else {
+        if (pagingDeepDebug)
+            logDebugn("\t- PD was created at 0x%64x", pd);
+    }
+    else
+    {
         // Page directory is present, retrieve the address
         pd = (pagetable_entry_t *)ADDRESS_EXCLUDE(pdpte);
         // If override is on we will override the flags of the table
-        if (override) { 
+        if (override)
+        {
             pdpte &= (~((pagetable_entry_t)0)) << 12;
-            pdpte |= flags.pdptFlags; 
+            pdpte |= flags.pdptFlags;
             pdpt[PDPT_INDEXER(virt)] = pdpte;
+            if (pagingDeepDebug)
+                logDebugn("\t- PD was overriden at 0x%64x", pd);
+        }
+        else
+        {
+            if (pagingDeepDebug)
+                logDebugn("\t- PDPT was already at 0x%64x", pd);
         }
     }
 
     // Creating PT
     pagetable_entry_t pde = pd[PD_INDEXER(virt)];
+    if (pagingDeepDebug)
+        logDebugn("\t- PD entry indexed %d", PD_INDEXER(virt));
     pagetable_entry_t *pt;
 
-    if (!(pde & PAGETABLE_PRESENT)) {
+    if (!(pde & PAGETABLE_PRESENT))
+    {
         pde |= flags.pdFlags;
         pt = (pagetable_entry_t *)memoryPhysicalAllocator.allocatePage();
         memset((char *)pt, 0, PAGE_SIZE);
         pde |= (uint64_t)pt;
         pd[PD_INDEXER(virt)] = pde;
-    } else {
+        if (pagingDeepDebug)
+            logDebugn("\t- PT was created at 0x%64x", pt);
+    }
+    else
+    {
         // Page table is present, retrieve the address
         pt = (pagetable_entry_t *)ADDRESS_EXCLUDE(pde);
         // If override is on we will override the flags of the table
-        if (override) { 
+        if (override)
+        {
             pde &= (~((pagetable_entry_t)0)) << 12;
             pde |= flags.pdFlags;
-            pd[PD_INDEXER(virt)] = pde; 
+            pd[PD_INDEXER(virt)] = pde;
+            if (pagingDeepDebug)
+                logDebugn("\t- PT was overriden at 0x%64x", pt);
+        }
+        else
+        {
+            if (pagingDeepDebug)
+                logDebugn("\t- PT was already at 0x%64x", pt);
         }
     }
 
     // Creating the page
     pagetable_entry_t pte = pt[PT_INDEXER(virt)];
+    if (pagingDeepDebug)
+        logDebugn("\t- PT entry indexed %d", PT_INDEXER(virt));
 
     // Whether if override is on or the page isn't present, set the flags and the address.
-    if (!(pte & PAGE_PRESENT) || override) {
+    if (!(pte & PAGE_PRESENT) || override)
+    {
         pte &= (~((pagetable_entry_t)0)) << 12;
         pte |= flags.ptFlags;
         pte |= phys;
         pt[PT_INDEXER(virt)] = pte;
+        if (pagingDeepDebug)
+            logDebugn("\t- PT was created/overriden at 0x%64x", ADDRESS_EXCLUDE(pte));
     }
 }
 
-void pagingMapPage( virtual_address_t virt, physical_address_t phys,
-                    k_paging_flags flags,
-                    bool override) {
+void pagingMapPage(virtual_address_t virt, physical_address_t phys,
+                   k_paging_flags flags,
+                   bool override)
+{
     pagingMapPageInSpace(virt, phys, (physical_address_t)pagingGetCurrentSpace(), flags, override);
 }
 
-void pagingMapMemoryInTable( virtual_address_t virt, physical_address_t phys, uint64_t size,
-                    physical_address_t pml4Addr,
-                    k_paging_flags flags,
-                    bool override) {
+void pagingMapMemoryInTable(virtual_address_t virt, physical_address_t phys, uint64_t size,
+                            physical_address_t pml4Addr,
+                            k_paging_flags flags,
+                            bool override)
+{
     // TODO: check alignment
-    for (uint64_t offset = 0; offset < size; offset += PAGE_SIZE) {
+    for (uint64_t offset = 0; offset < size; offset += PAGE_SIZE)
+    {
         pagingMapPageInSpace(virt + offset, phys + offset, pml4Addr, flags, override);
     }
 }
 
-void pagingMapMemory( virtual_address_t virt, physical_address_t phys, uint64_t size,
-                    k_paging_flags flags,
-                    bool override) {
+void pagingMapMemory(virtual_address_t virt, physical_address_t phys, uint64_t size,
+                     k_paging_flags flags,
+                     bool override)
+{
     pagingMapMemoryInTable(virt, phys, size, pagingGetCurrentSpace(), flags, override);
 }
 
-bool pagingIsPagetableEmpty(pagetable_entry_t *pagetable) {
+bool pagingIsPagetableEmpty(pagetable_entry_t *pagetable)
+{
     for (int i; i < PAGETABLE_SIZE; i++)
-        if (CHECK_FLAG(pagetable[i], PAGETABLE_PRESENT)) return false; 
+        if (CHECK_FLAG(pagetable[i], PAGETABLE_PRESENT))
+            return false;
     return true;
 }
 
-void pagingUnmapPage(virtual_address_t virt) {
+void pagingUnmapPage(virtual_address_t virt)
+{
     pagetable_entry_t *pml4 = (pagetable_entry_t *)pagingGetCurrentSpace();
-    
+
     pagetable_entry_t pml4e = pml4[PML4_INDEXER(virt)];
-    if (!(pml4e & PAGETABLE_PRESENT)) {
+    if (pml4e & PAGETABLE_PRESENT)
+    {
         pagetable_entry_t *pdpt = (pagetable_entry_t *)ADDRESS_EXCLUDE(pml4e);
 
         pagetable_entry_t pdpte = pdpt[PDPT_INDEXER(virt)];
-        if (!(pdpte & PAGETABLE_PRESENT)) {
+        if (pdpte & PAGETABLE_PRESENT)
+        {
             pagetable_entry_t *pd = (pagetable_entry_t *)ADDRESS_EXCLUDE(pdpte);
 
             pagetable_entry_t pde = pd[PD_INDEXER(virt)];
-            if (!(pde & PAGETABLE_PRESENT)) {
+            if (pde & PAGETABLE_PRESENT)
+            {
                 pagetable_entry_t *pt = (pagetable_entry_t *)ADDRESS_EXCLUDE(pde);
 
                 pagetable_entry_t pte = pt[PT_INDEXER(virt)];
-                if (!(pte & PAGE_PRESENT)) {
+                if (pte & PAGE_PRESENT)
+                {
                     UNSET_FLAG(pte, PAGE_PRESENT);
                     pt[PT_INDEXER(virt)] = pte;
 
                     // Check if PT is empty now
-                    if (pagingIsPagetableEmpty(pt)) {
+                    if (pagingIsPagetableEmpty(pt))
+                    {
                         // Free the PT space
                         memoryPhysicalAllocator.freePage((physical_address_t)pt);
 
@@ -146,7 +217,8 @@ void pagingUnmapPage(virtual_address_t virt) {
                         pd[PD_INDEXER(virt)] = pde;
 
                         // Check if PD is empty now
-                        if (pagingIsPagetableEmpty(pd)) {
+                        if (pagingIsPagetableEmpty(pd))
+                        {
                             // Free the PD space
                             memoryPhysicalAllocator.freePage((physical_address_t)pd);
 
@@ -155,7 +227,8 @@ void pagingUnmapPage(virtual_address_t virt) {
                             pdpt[PDPT_INDEXER(virt)] = pdpte;
 
                             // Check if PDPT is empty now
-                            if (pagingIsPagetableEmpty(pdpt)) {
+                            if (pagingIsPagetableEmpty(pdpt))
+                            {
                                 // Free the PDPT space
                                 memoryPhysicalAllocator.freePage((physical_address_t)pdpt);
 
@@ -171,7 +244,8 @@ void pagingUnmapPage(virtual_address_t virt) {
     }
 }
 
-void pagingInitialize(physical_address_t kernelBase, virtual_address_t hhdm) {
+void pagingInitialize(physical_address_t kernelBase, virtual_address_t hhdm)
+{
     physical_address_t pml4Addr = memoryPhysicalAllocator.allocatePage();
 
     // Identity map first 4GiB of memory
@@ -186,39 +260,51 @@ void pagingInitialize(physical_address_t kernelBase, virtual_address_t hhdm) {
     pagingSwitchSpace(pml4Addr);
 }
 
-void pagingSwitchSpace(physical_address_t phys) {
-    asm ("mov cr3, %[aPhys]" : : [aPhys] "r" (phys));
+void pagingSwitchSpace(physical_address_t phys)
+{
+    asm("mov cr3, %[aPhys]"
+        :
+        : [aPhys] "r"(phys));
 }
 
-physical_address_t pagingGetCurrentSpace() {
+physical_address_t pagingGetCurrentSpace()
+{
     // Get the address of the current space from cr3
     pagetable_entry_t *pml4;
-    asm volatile ("mov %0, cr3" : "=r"(pml4));
+    asm volatile("mov %0, cr3"
+                 : "=r"(pml4));
     return (physical_address_t)pml4;
 }
 
-physical_address_t pagingVirtualToPhysical(virtual_address_t virt) {
+physical_address_t pagingVirtualToPhysical(virtual_address_t virt)
+{
     pagetable_entry_t *pml4 = (pagetable_entry_t *)(pagingGetCurrentSpace() + HHDM);
-    
+
     pagetable_entry_t pml4e = pml4[PML4_INDEXER(virt)];
-    if (!(pml4e & PAGETABLE_PRESENT)) return NULL;
+    if (!(pml4e & PAGETABLE_PRESENT))
+        return NULL;
 
     pagetable_entry_t *pdpt = (pagetable_entry_t *)(ADDRESS_EXCLUDE(pml4e) + HHDM);
 
     pagetable_entry_t pdpte = pdpt[PDPT_INDEXER(virt)];
-    if (!(pdpte & PAGETABLE_PRESENT)) return NULL;
-    if (CHECK_FLAG(pdpte, PAGETABLE_PAGE_SIZE)) return ADDRESS_EXCLUDE(pdpte); // Handle 4GiB pages
+    if (!(pdpte & PAGETABLE_PRESENT))
+        return NULL;
+    if (CHECK_FLAG(pdpte, PAGETABLE_PAGE_SIZE))
+        return ADDRESS_EXCLUDE(pdpte); // Handle 4GiB pages
 
     pagetable_entry_t *pd = (pagetable_entry_t *)(ADDRESS_EXCLUDE(pdpte) + HHDM);
 
     pagetable_entry_t pde = pd[PD_INDEXER(virt)];
-    if (!(pde & PAGETABLE_PRESENT)) return NULL;
-    if (CHECK_FLAG(pde, PAGETABLE_PAGE_SIZE)) return ADDRESS_EXCLUDE(pde); // Handle 2MiB pages
+    if (!(pde & PAGETABLE_PRESENT))
+        return NULL;
+    if (CHECK_FLAG(pde, PAGETABLE_PAGE_SIZE))
+        return ADDRESS_EXCLUDE(pde); // Handle 2MiB pages
 
     pagetable_entry_t *pt = (pagetable_entry_t *)(ADDRESS_EXCLUDE(pde) + HHDM);
 
     pagetable_entry_t pte = pt[PT_INDEXER(virt)];
-    if (!(pte & PAGE_PRESENT)) return NULL;
+    if (!(pte & PAGE_PRESENT))
+        return NULL;
 
     return (physical_address_t)(ADDRESS_EXCLUDE(pte) + OFFSET_EXCLUDE(virt));
 }
