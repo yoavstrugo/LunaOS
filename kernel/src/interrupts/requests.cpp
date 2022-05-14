@@ -15,11 +15,11 @@ uint64_t count = 0;
 uint64_t seconds = 0;
 
 void requestTimer(interrupt_frame *frame) {
-    count++;
-    if (count >= 1000) {
-        count = 0;
-        seconds++;
-        logDebugn("%! %ds", "[APIC Timer]", seconds);
-    }
+    // count++;
+    // if (count >= 1000) {
+    //     count = 0;
+    //     seconds++;
+    //     logDebugn("%! %ds", "[APIC Timer]", seconds);
+    // }
         lapicSendEOI();
 }

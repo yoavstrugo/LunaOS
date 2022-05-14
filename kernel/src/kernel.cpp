@@ -44,14 +44,19 @@ static struct stivale2_header_tag_framebuffer framebuffer_hdr_tag = {
         .identifier = STIVALE2_HEADER_TAG_FRAMEBUFFER_ID,
         // Instead of 0, we now point to the previous header tag. The order in
         // which header tags are linked does not matter.
-        .next = 0 //(uint64_t)&terminal_hdr_tag
-    },
+        .next = 0},
     // We set all the framebuffer specifics to 0 as we want the bootloader
     // to pick the best it can.
     .framebuffer_width = 0,
     .framebuffer_height = 0,
     .framebuffer_bpp = 0,
     .unused = 0};
+
+static stivale2_header_tag_smp smp_hdr_tag{
+    .tag{
+        .identifier = STIVALE2_HEADER_TAG_SMP_ID,
+        .next = (uint64_t)&framebuffer_hdr_tag},
+    .flags = 1UL};
 
 // The stivale2 specification says we need to define a "header structure".
 // This structure needs to reside in the .stivale2hdr ELF section in order
@@ -79,7 +84,7 @@ __attribute__((section(".stivale2hdr"), used)) static struct stivale2_header sti
     .flags = (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4),
     // This header structure is the root of the linked list of header tags and
     // points to the first one in the linked list.
-    .tags = (uintptr_t)&framebuffer_hdr_tag};
+    .tags = (uintptr_t)&smp_hdr_tag};
 
 // The following will be our kernel's entry point.
 extern "C" void kernelMain(stivale2_struct *stivale2Struct)
@@ -108,7 +113,6 @@ void kernelInitialize(stivale2_struct *stivaleInfo)
     heapAllocate(511);
     heapAllocate(1024 * 1024 + 1000);
 
-
     acpiInitialize(stivaleInfo);
     k_acpi_sdt_hdr *madtHeader = acpiGetEntryWithSignature("APIC");
     if (!madtHeader)
@@ -122,8 +126,16 @@ void kernelInitialize(stivale2_struct *stivaleInfo)
 
     lapicInitialize();
 
-    ioapicCreateISARedirection(1, 1, 0); 
+    ioapicCreateISARedirection(1, 1, 0);
     lapicStartTimer();
+
+    stivale2_struct_tag_smp  *smpStruct = (stivale2_struct_tag_smp *)stivale2_get_tag(stivaleInfo, STIVALE2_STRUCT_TAG_SMP_ID);
+    if (!smpStruct)
+        kernelPanic("%! SMP struct was not found", "[SMP]");
+
+    logDebugn("%! SMP struct was found. \
+                \n\t- BSP LAPIC id: %d, \
+                \n\t- CPU Count: %d ","[SMP]", smpStruct->bsp_lapic_id, smpStruct->cpu_count);
 }
 
 void kernelPanic(const char *msg, ...)

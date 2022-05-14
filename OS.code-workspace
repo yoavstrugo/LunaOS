@@ -5,6 +5,38 @@
 		}
 	],
 	"settings": {
-		"makefile.extensionOutputFolder": "./.vscode"
+		"makefile.extensionOutputFolder": "./.vscode",
+		"cSpell.words": [
+			"APIC",
+			"CMCI",
+			"Debugn",
+			"EOIR",
+			"gdtr",
+			"HHDM",
+			"HIBYTE",
+			"HLAT",
+			"Infon",
+			"IOAPIC",
+			"IOTC",
+			"LAPIC",
+			"lgdt",
+			"lidt",
+			"LOBYTE",
+			"LOHIBYTE",
+			"madt",
+			"OPMODE",
+			"pdpt",
+			"pdpte",
+			"rsdp",
+			"rsdt",
+			"stivale",
+			"Warnn",
+			"xsdt"
+		],
+		"cSpell.enabled": true
+	},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": []
 	}
 }
