@@ -18,7 +18,9 @@ IMAGESIZE = 10000 # The size of the OS image, in KiB
 
 ISOROOT = isoroot
 
-QEMU_FLAGS = -m 512M -cpu qemu64 -net none
+HOST_SHARE = Sharing
+
+QEMU_FLAGS = -m 512M -cpu qemu64 -smp 2 -net none
 
 .PHONY: buildimg
 buildimg: 
@@ -84,6 +86,16 @@ buildiso: $(ISOROOT)
 	@rm -R $(ISOROOT)
 
 	@echo Finished!
+
+.PHONY: copytohost
+copytohost: buildiso
+	@if [ ! -d "/mnt/hgfs/$(HOST_SHARE)" ]; then \
+		echo "'/mnt/hgfs/$(HOST_SHARE)' does not exist, please create a shared folder with the host"; \
+		exit 1; \
+	fi
+
+	@echo "Copying $(OSNAME).iso to shared host folder '/mnt/hgfs/$(HOST_SHARE)'"
+	@cp $(OSNAME).iso /mnt/hgfs/$(HOST_SHARE)/$(OSNAME).iso
 
 
 $(KERNELBIN):
