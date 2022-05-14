@@ -12,6 +12,8 @@ bool heapInitialized = false;
 k_freelist_allocator heapAllocator;
 uint64_t heapUsed;
 
+bool heapVerbose = true;
+
 void heapInitialize(virtual_address_t start, virtual_address_t end)
 {
     heapAllocator.init(start, end);
@@ -29,10 +31,11 @@ void heapInitialize(virtual_address_t start, virtual_address_t end)
         pagingMapPage(start + PAGE_SIZE * page, pAddr);
     }
 
-    logDebugn("%! Heap has been initialized. \
+    if (heapVerbose)
+        logDebugn("%! Heap has been initialized. \
                 \n\t- Starting at: 0x%64x, \
-                \n\t- Ending At: 0x%64x", 
-                "[Kernel Heap]", start, end);
+                \n\t- Ending At: 0x%64x",
+                  "[Kernel Heap]", start, end);
 }
 
 void *heapAllocate(uint64_t size)
@@ -55,7 +58,8 @@ void *heapAllocate(uint64_t size)
         return 0;
     }
 
-    logDebugn("%! Successfully allocated %d %s.", "[Kernel Heap]", K_MEMORY_SIZE(size), K_MEMORY_UNIT(size));
+    if (heapVerbose)
+        logDebugn("%! Successfully allocated %d %s.", "[Kernel Heap]", K_MEMORY_SIZE(size), K_MEMORY_UNIT(size));
     heapUsed += size;
     return ptr;
 }
@@ -76,7 +80,7 @@ bool heapExpand()
         physical_address_t phys = memoryPhysicalAllocator.allocatePage();
         if (phys == 0)
         {
-            logDebugn("%! Failed to expand heap, out of physical memory.", "[Kernel Heap]");
+            logWarnn("%! Failed to expand heap, out of physical memory.", "[Kernel Heap]");
             return false;
         }
 
@@ -86,13 +90,14 @@ bool heapExpand()
     heapAllocator.expand(K_HEAP_EXPANSION_STEP);
     heapEnd += K_HEAP_EXPANSION_STEP;
 
-    logDebugn("%! Heap has expanded by %d %s, up to 0x%64x (%d %s in use)",
-              "[Kernel Heap]",
-              K_MEMORY_SIZE(K_HEAP_EXPANSION_STEP),
-              K_MEMORY_UNIT(K_HEAP_EXPANSION_STEP),
-              heapEnd,
-              K_MEMORY_SIZE(heapUsed),
-              K_MEMORY_UNIT(heapUsed));
+    if (heapVerbose)
+        logDebugn("%! Heap has expanded by %d %s, up to 0x%64x (%d %s in use)",
+                  "[Kernel Heap]",
+                  K_MEMORY_SIZE(K_HEAP_EXPANSION_STEP),
+                  K_MEMORY_UNIT(K_HEAP_EXPANSION_STEP),
+                  heapEnd,
+                  K_MEMORY_SIZE(heapUsed),
+                  K_MEMORY_UNIT(heapUsed));
     return true;
 }
 

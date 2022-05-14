@@ -4,6 +4,8 @@
 
 #define K_HEAP_EXPANSION_STEP   0x100000
 
+extern bool heapVerbose;
+
 /**
  * @brief Initializes the kernel's heap at the given memory address'
  * 
