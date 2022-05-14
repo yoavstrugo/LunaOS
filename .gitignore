@@ -1,6 +1,7 @@
 kernel/bin/kernel.elf
 kernel/lib/*
 build/*
+.vscode/*.log
 .VSCodeCounter/*
 OVMF/*
 kernel/Compiling
