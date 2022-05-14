@@ -1,0 +1,50 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Clean",
+			"type": "shell",
+			"command": "make -C ./kernel clean"
+		},
+		{
+			"label": "Compile",
+			"type": "shell",
+			"command": "make -C ./kernel all",
+			"dependsOn": [
+				"Clean"
+			]
+		},
+		{
+			"label": "Build",
+			"type": "shell",
+			"command": "make buildiso",
+			"dependsOn": [
+				"Compile"
+			]
+		},
+		{
+			"label": "QEMU Run",
+			"type": "shell",
+			"command": "make run",
+			"dependsOn": [
+				"Build"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "QEMU Debug",
+			"type": "shell",
+			"command": "make qemudebug",
+			"dependsOn": [
+				"Build"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Copy To Host",
+			"type": "shell",
+			"command": "make copytohost",
+			"problemMatcher": []
+		}
+	]
+}
