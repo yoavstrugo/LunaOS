@@ -8,7 +8,7 @@ bool rsdpValidate(k_rsdp_descriptor *rsdp) {
     uint8_t *rsdpBytes = (uint8_t *)rsdp;
     uint8_t sum = 0;
 
-    logDebugn("%! Checking first part.", "RSDP");
+    logDebugn("%! Checking first part.", "[RSDP]");
     uint16_t i;
     for (i = 0; i < sizeof(k_rsdp_descriptor); i++)
         sum += rsdpBytes[i];
@@ -16,18 +16,18 @@ bool rsdpValidate(k_rsdp_descriptor *rsdp) {
     if (sum != 0)
         return false;
 
-    logDebugn("%! First part checks up!", "RSDP");
+    logDebugn("%! First part checks up!", "[RSDP]");
 
     // Check if its above version 2.0
     if (rsdp->revision > 0) {
-        logDebugn("%! version above 2.0, checking second part.", "RSDP");
+        logDebugn("%! version above 2.0, checking second part.", "[RSDP]");
         for (; i < sizeof(k_rsdp_descriptor_20); i++)
             sum += rsdpBytes[i];
         
         if (sum != 0)
             return false;
         
-        logDebugn("%! Second part checks up as well!", "RSDP");
+        logDebugn("%! Second part checks up as well!", "[RSDP]");
     }
     
     return true;
