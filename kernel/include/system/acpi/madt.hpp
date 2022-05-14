@@ -8,7 +8,7 @@ struct k_madt_hdr {
     uint32_t flags;
 }__attribute__((packed));
 
-enum k_madt_entry_type {
+enum MADT_ENTRY_TYPE {
     P_LAPIC     = 0, // Processor Local APIC
     IOAPIC      = 1, // I/O APIC
     IOAPIC_ISO  = 2, // IO/APIC Interrupt Source Override
@@ -19,7 +19,7 @@ enum k_madt_entry_type {
 };
 
 struct k_madt_entry_header {
-    k_madt_entry_type entryType;
+    uint8_t entryType;
     uint8_t recordLength;
 }__attribute__((packed));
 
