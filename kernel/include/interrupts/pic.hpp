@@ -51,3 +51,9 @@ void picSetMask(uint8_t irq);
  * @param irq The irq
  */
 void picUnsetMask(uint8_t irq);
+
+/**
+ * @brief Disables the PIC so APIC can be used
+ * 
+ */
+void picDisable();

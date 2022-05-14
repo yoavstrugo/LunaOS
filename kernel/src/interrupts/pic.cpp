@@ -68,3 +68,10 @@ void picUnsetMask(uint8_t irq) {
     value = ioInByte(port) & ~(1 << irq);
     ioOutByte(port, value);        
 }
+
+void picDisable() {
+	picRemapIRQs();
+	// Mask off all the bits
+	ioOutByte(PIC1_DATA, 0xFF);
+	ioOutByte(PIC2_DATA, 0xFF);
+}
