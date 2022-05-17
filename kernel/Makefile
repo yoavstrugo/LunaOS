@@ -78,8 +78,8 @@ override INTERNALLDFLAGS :=    \
 	-static
 
 # Use find to glob all *.c files in the directory and extract the object names.
-SRCS 			= $(shell find ./ -type f -name '*.cpp')
-ASMSRC			= $(shell find ./ -type f -name '*.asm')
+SRCS 			= $(shell find ./src/ -type f -name '*.cpp')
+ASMSRC			= $(shell find ./src/ -type f -name '*.asm')
 OBJS 			= $(patsubst %.cpp, %.o, $(notdir $(SRCS)))
 OBJS 			+= $(patsubst %.asm, %_asm.o, $(notdir $(ASMSRC)))
 HEADER_DEPS 	= $(OBJS:.cpp=.d)

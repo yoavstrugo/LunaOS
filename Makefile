@@ -56,8 +56,8 @@ buildimg:
 	@echo "Copying kernel ${KERNELDATA} into image..."
 	@mcopy -i $(BUILDDIR)/$(OSNAME).img $(KERNELDATA) ::/KERNEL/DATA
 
-$(ISOROOT): $(KERNELDATA) $(LIMINECFG) $(LIMINEDATA) $(LIMINEDIR) $(KERNELBIN)
-	@mkdir -p $(ISOROOT)  $(ISOROOT)/bootloader/data  $(ISOROOT)/kernel/data
+$(ISOROOT): $(KERNELDATA) $(LIMINECFG) $(LIMINEDATA) $(LIMINEDIR) $(KERNELBIN) ap_startup.o
+	@mkdir -p $(ISOROOT)  $(ISOROOT)/bootloader/data  $(ISOROOT)/kernel/data $(ISOROOT)/system
 	@cp -v 	$(LIMINEDATA)  $(ISOROOT)/bootloader/data
 	@cp -v 	$(LIMINECFG)   $(ISOROOT)/
 	@cp -v 	$(LIMINEDIR)/limine.sys \
@@ -65,7 +65,11 @@ $(ISOROOT): $(KERNELDATA) $(LIMINECFG) $(LIMINEDATA) $(LIMINEDIR) $(KERNELBIN)
 		$(LIMINEDIR)/limine-cd-efi.bin  $(ISOROOT)/
 	@cp -v 	$(KERNELBIN)  $(ISOROOT)/kernel/kernel.elf
 	@cp -v 	$(KERNELDATA)  $(ISOROOT)/kernel/data
+	@mv -v ap_startup.o $(ISOROOT)/system/ap_startup.o
 	@echo Created a temporary directory with the OS files.
+
+ap_startup.o: kernel/ap/ap_startup.asm
+	@nasm -f bin -o $@ -s $^
 
 .PHONY: buildiso
 buildiso: $(ISOROOT)
