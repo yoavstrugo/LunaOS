@@ -1,15 +1,18 @@
 #include <Bitmap.hpp>
 
-void Bitmap::setBuffer(uint8_t *buffer, uint64_t size) {
+void Bitmap::setBuffer(uint8_t *buffer, uint64_t size)
+{
     this->_buffer = buffer;
     this->_size = size;
 }
 
-uint64_t Bitmap::getSize() {
+uint64_t Bitmap::getSize()
+{
     return this->_size;
 }
 
-bool Bitmap::operator[](uint64_t index) {
+bool Bitmap::operator[](uint64_t index)
+{
     // We will consider the buffer as a byte array, therefore we want
     // to get the byte that 'holds' the bit.
     uint64_t byteIndex = index / BYTE_SIZE;
@@ -24,7 +27,8 @@ bool Bitmap::operator[](uint64_t index) {
     return ((uint8_t *)this->_buffer)[byteIndex] & mask;
 }
 
-void Bitmap::set(uint64_t index, bool value) {
+void Bitmap::set(uint64_t index, bool value)
+{
     // We will consider the buffer as a byte array, therefore we want
     // to get the byte that 'holds' the bit.
     uint64_t byteIndex = index / BYTE_SIZE;

@@ -5,7 +5,8 @@
 /**
  * @brief The header of a address range
  */
-struct k_address_range_header {
+struct k_address_range_header
+{
     // The start of the address range, must be page-aligned
     virtual_address_t base;
 
@@ -21,16 +22,17 @@ struct k_address_range_header {
 
 /**
  * @brief   Allocator for virtual address ranges.
- *          It can deliver virtual address ranges on-demand, 
+ *          It can deliver virtual address ranges on-demand,
  *          with a specific number of pages.
  */
-struct k_virtual_address_range_allocator {
+struct k_virtual_address_range_allocator
+{
     k_virtual_address_range_allocator();
 
     /**
-     * @brief   Adds a range to the virtual address range allocator, so it will 
+     * @brief   Adds a range to the virtual address range allocator, so it will
      *          able to allocated ranges from it
-     * 
+     *
      * @param start The start of the range, must be page-aligned
      * @param end   The end of the range, must be page-aligned
      */
@@ -38,7 +40,7 @@ struct k_virtual_address_range_allocator {
 
     /**
      * @brief   Allocated a virtual range with how many pages requested
-     * 
+     *
      * @param pages How many pages shall the address range contain
      * @return virtual_address_t The start of the address range
      */
@@ -49,12 +51,12 @@ struct k_virtual_address_range_allocator {
      */
     void freeRange(virtual_address_t base);
 
-    private:
-        // The head of the address range linked-list
-        k_address_range_header *head;
+private:
+    // The head of the address range linked-list
+    k_address_range_header *head;
 
-        /**
-         * @brief Loop over the list and try to merge the address ranges
-         */
-        void mergeAll();
+    /**
+     * @brief Loop over the list and try to merge the address ranges
+     */
+    void mergeAll();
 };

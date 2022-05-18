@@ -22,9 +22,9 @@ void madtParse(k_acpi_sdt_hdr *madtHeader)
     // Parse the table
     logDebugn("%! Table Entries:", "[MADT]");
 
-    #ifdef K_LOG_LEVEL_DEBUG
+#ifdef K_LOG_LEVEL_DEBUG
     heapVerbose = false;
-    #endif
+#endif
 
     uint32_t i = 0;
     while (i < madtLength)
@@ -98,9 +98,9 @@ void madtParse(k_acpi_sdt_hdr *madtHeader)
         i += entryHeader->recordLength;
     }
 
-    #ifdef K_LOG_LEVEL_DEBUG
+#ifdef K_LOG_LEVEL_DEBUG
     heapVerbose = true;
-    #endif
+#endif
 
     // Handle the entries
     // LAPIC

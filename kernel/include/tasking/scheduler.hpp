@@ -5,7 +5,7 @@
 
 /**
  * @brief An implementation of the MLFQ scheduler
- * 
+ *
  */
 
 #define K_CONST_SCHEDULER_QUEUES 10

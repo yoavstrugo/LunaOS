@@ -59,12 +59,13 @@
 #define APIC_LVT_TIMER_MODE_PERIODIC (1 << 17)     // 01
 #define APIC_LVT_TIMER_MODE_TSC_DEADLINE (2 << 17) // 10
 
+#define APIC_TIMER_TIMESLOT_MS 1
+
 const k_paging_flags LAPIC_MEMORY_FLAGS = {
     .pml4Flags = PAGETABLE_PRESENT | PAGETABLE_READWRITE,
     .pdptFlags = PAGETABLE_PRESENT | PAGETABLE_READWRITE,
     .pdFlags = PAGETABLE_PRESENT | PAGETABLE_READWRITE,
-    .ptFlags = PAGE_PRESENT | PAGE_READWRITE | PAGE_CACHE
-};
+    .ptFlags = PAGE_PRESENT | PAGE_READWRITE | PAGE_CACHE};
 
 /**
  * @brief Prepares the Local APIC for initialization
@@ -97,7 +98,7 @@ void lapicWrite(uint32_t reg, uint32_t value);
 
 /**
  * @brief Starts the ACPI timer on frequency of 1000hz (interrupt every 1ms)
- * 
+ *
  */
 void lapicStartTimer();
 

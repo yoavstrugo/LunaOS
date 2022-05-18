@@ -152,7 +152,6 @@ physical_address_t acpiGetEntry(uint32_t i)
     return ((physical_address_t *)((virtual_address_t)xsdt + sizeof(k_acpi_sdt_hdr)))[i];
 }
 
-
 k_acpi_sdt_hdr *acpiGetEntryWithSignature(const char *signature)
 {
     k_acpi_entry *curr = acpiTables;

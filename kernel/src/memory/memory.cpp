@@ -25,7 +25,7 @@ void memoryInitialize(stivale2_struct *stivale2Info)
     if (!hhdm)
         kernelPanic("%! Couldn't find HHDM tag!", "[Memory]");
 
-    logDebugn("%! HHDM Address: 0x%64x","[Memory]", hhdm->addr);
+    logDebugn("%! HHDM Address: 0x%64x", "[Memory]", hhdm->addr);
 
     stivale2_struct_tag_kernel_base_address *kernelBase = (stivale2_struct_tag_kernel_base_address *)
         stivale2_get_tag(stivale2Info, STIVALE2_STRUCT_TAG_KERNEL_BASE_ADDRESS_ID);
@@ -47,7 +47,7 @@ void memoryInitialize(stivale2_struct *stivale2Info)
     for (virtual_address_t virt = K_CONST_HEAP_DEFAULT_START; virt < K_CONST_HEAP_DEFAULT_END; virt += PAGE_SIZE)
     {
         physical_address_t phys = memoryPhysicalAllocator.allocatePage();
-        pagingMapPage(virt, phys);   
+        pagingMapPage(virt, phys);
     }
 
     // Initialize the kernel's heap

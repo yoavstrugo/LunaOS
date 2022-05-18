@@ -20,8 +20,9 @@ enum MADT_ENTRY_TYPE
     P_L2APIC = 9    // Processor Local x2APIC
 };
 
-template<class T>
-struct k_madt_entry_header_node {
+template <class T>
+struct k_madt_entry_header_node
+{
     T *header;
     k_madt_entry_header_node<T> *next;
 };

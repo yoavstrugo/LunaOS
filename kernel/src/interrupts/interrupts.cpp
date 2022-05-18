@@ -6,22 +6,26 @@
 #include <interrupts/requests.hpp>
 #include <kernel.hpp>
 
-void interruptsInitialize() {
+void interruptsInitialize()
+{
     idtInitialize();
     idtLoad();
     interruptsInstallRoutines();
     interruptsEnable();
 }
 
-void interruptsEnable() {
-    asm ("sti");
+void interruptsEnable()
+{
+    asm("sti");
 }
 
-void interruptsDisable() {
-    asm ("cli");
+void interruptsDisable()
+{
+    asm("cli");
 }
 
-void interruptsInstallRoutines() {
+void interruptsInstallRoutines()
+{
     idtCreateEntry(0x08, (uint64_t)exceptionDoubleFault, 0x08, 0x00, K_IDT_TA_INTERRUPT);
     idtCreateEntry(0x0D, (uint64_t)exceptionGPFault, 0x08, 0x00, K_IDT_TA_INTERRUPT);
     idtCreateEntry(0x0E, (uint64_t)exceptionPageFault, 0x08, 0x00, K_IDT_TA_INTERRUPT);

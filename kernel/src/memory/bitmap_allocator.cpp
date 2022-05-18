@@ -2,14 +2,17 @@
 
 #include <memory/paging.hpp>
 
-BitmapAllocator::BitmapAllocator() {
+BitmapAllocator::BitmapAllocator()
+{
     this->_freeMemory = 0;
     this->_usedMemory = 0;
     this->_reservedMemory = 0;
 }
 
-void BitmapAllocator::initialize(stivale2_struct_tag_memmap *memmapStruct) {
-    if (this->_isInitialized) return;    
+void BitmapAllocator::initialize(stivale2_struct_tag_memmap *memmapStruct)
+{
+    if (this->_isInitialized)
+        return;
     this->_isInitialized = true;
 
     // Before we start mapping the memory we have to calculate the memory size
@@ -83,44 +86,53 @@ void BitmapAllocator::initialize(stivale2_struct_tag_memmap *memmapStruct) {
 
     // TODO: Lock the pages of the bitmap
     for (uint64_t i = 0; i < bitmapSize / PAGE_SIZE + 1; i++)
-        this->_lockBlock(bitmapAddress + i * PAGE_SIZE);  
+        this->_lockBlock(bitmapAddress + i * PAGE_SIZE);
 }
 
-void BitmapAllocator::freePage(physical_address_t blockAddr) {
+void BitmapAllocator::freePage(physical_address_t blockAddr)
+{
     this->_freeBlock(blockAddr);
 }
 
-uint64_t BitmapAllocator::totalMemory() {
+uint64_t BitmapAllocator::totalMemory()
+{
     return this->_freeMemory + this->_usedMemory + this->_reservedMemory;
 }
 
-uint64_t BitmapAllocator::freeMemory() {
+uint64_t BitmapAllocator::freeMemory()
+{
     return this->_freeMemory;
 }
 
-uint64_t BitmapAllocator::usedMemory() {
+uint64_t BitmapAllocator::usedMemory()
+{
     return this->_usedMemory;
 }
 
-uint64_t BitmapAllocator::reservedMemory() {
+uint64_t BitmapAllocator::reservedMemory()
+{
     return this->_reservedMemory;
 }
 
-physical_address_t BitmapAllocator::allocatePage() {
-    // TODO: do something if no free block 
+physical_address_t BitmapAllocator::allocatePage()
+{
+    // TODO: do something if no free block
     physical_address_t blockAddr = this->_nextBlock();
     this->_lockBlock(blockAddr);
     return blockAddr;
 }
 
-void BitmapAllocator::_lockBlock(physical_address_t blockAddr) {
-    // TODO: check that blockAddr is page aligned and do something 
+void BitmapAllocator::_lockBlock(physical_address_t blockAddr)
+{
+    // TODO: check that blockAddr is page aligned and do something
     // if its not
 
     // TODO: something if not initiallized
-    if (!this->_isInitialized) return;
+    if (!this->_isInitialized)
+        return;
 
-    if (this->_memoryBitmap[blockAddr / PAGE_SIZE]) {
+    if (this->_memoryBitmap[blockAddr / PAGE_SIZE])
+    {
         this->_freeMemory -= PAGE_SIZE;
         this->_usedMemory += PAGE_SIZE;
 
@@ -128,14 +140,17 @@ void BitmapAllocator::_lockBlock(physical_address_t blockAddr) {
     }
 }
 
-void BitmapAllocator::_freeBlock(physical_address_t blockAddr) {
-    // TODO: check that blockAddr is page aligned and do something 
+void BitmapAllocator::_freeBlock(physical_address_t blockAddr)
+{
+    // TODO: check that blockAddr is page aligned and do something
     // if its not
 
     // TODO: something if not initiallized
-    if (!this->_isInitialized) return;
+    if (!this->_isInitialized)
+        return;
 
-    if (!this->_memoryBitmap[blockAddr / PAGE_SIZE]) {
+    if (!this->_memoryBitmap[blockAddr / PAGE_SIZE])
+    {
         this->_freeMemory += PAGE_SIZE;
         this->_usedMemory -= PAGE_SIZE;
 
@@ -143,16 +158,20 @@ void BitmapAllocator::_freeBlock(physical_address_t blockAddr) {
     }
 }
 
-physical_address_t BitmapAllocator::_nextBlock() {
+physical_address_t BitmapAllocator::_nextBlock()
+{
     // TODO: something if not initiallized
-    if (!this->_isInitialized) return 0;
+    if (!this->_isInitialized)
+        return 0;
 
     for (uint64_t i = 0; i < this->_memoryBitmap.getSize(); i++)
-        if (this->_memoryBitmap[i]) return i * PAGE_SIZE;
+        if (this->_memoryBitmap[i])
+            return i * PAGE_SIZE;
     return 0;
 }
 
-uint64_t countMemory(stivale2_struct_tag_memmap *memmapStruct) {
+uint64_t countMemory(stivale2_struct_tag_memmap *memmapStruct)
+{
     uint64_t memorySize = 0;
     {
         for (uint64_t i = 0; i < memmapStruct->entries; i++)

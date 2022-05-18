@@ -6,7 +6,7 @@
 
 #define K_XSDT_ENTRIES(xsdt) (xsdt->length - sizeof(k_acpi_sdt_hdr)) / 8
 
-#define K_ACPI_SIGNATURE_BYTES  4
+#define K_ACPI_SIGNATURE_BYTES 4
 
 struct k_acpi_sdt_hdr
 {

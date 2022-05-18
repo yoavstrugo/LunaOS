@@ -7,14 +7,15 @@ struct k_chunk_header
     k_chunk_header *next;
     uint8_t used : 1;
     uint64_t size;
-}__attribute__((packed));
+} __attribute__((packed));
 
-struct k_freelist_allocator {
+struct k_freelist_allocator
+{
     k_chunk_header *head;
 
     /**
      * @brief Construct a new freelist allocator
-     * 
+     *
      * @param start The start of the allocator
      * @param end   The end of the allocator
      */
@@ -22,16 +23,16 @@ struct k_freelist_allocator {
 
     /**
      * @brief Allocates memory
-     * 
+     *
      * @param How much memory to allocate
-     * 
+     *
      * @return void* ptr to the allocated memory, 0 if no memory was allocated
      */
-    void* allocate(uint64_t size);
+    void *allocate(uint64_t size);
 
     /**
      * @brief Free memory
-     * 
+     *
      * @param mem ptr to the memory
      * @return The size of the free'd memory
      */
@@ -39,15 +40,15 @@ struct k_freelist_allocator {
 
     /**
      * @brief Expand the allocator's working area
-     * 
+     *
      * @param amount How much to expand
      */
     void expand(uint64_t amount);
 
-    private:
-        /**
-         * @brief Loop over the list and merge unused chunks
-         * 
-         */
-        void mergeChunks();
+private:
+    /**
+     * @brief Loop over the list and merge unused chunks
+     *
+     */
+    void mergeChunks();
 };

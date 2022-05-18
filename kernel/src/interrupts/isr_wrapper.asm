@@ -1,3 +1,4 @@
+; extern interruptHandler
 
 global isr_wrapper
 isr_wrapper:
@@ -19,7 +20,8 @@ isr_wrapper:
     push r14
     push r15
 
-    ; TODO: may need to push and retrieve segments registers for conetxt switching
+    ; TODO: may need to push and retrieve segments registers for context switching
+    ; call interrupt_handlere
 
     ; Retrieve all general purpose registers
     pop r15

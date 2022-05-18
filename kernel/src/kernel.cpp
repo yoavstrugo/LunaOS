@@ -129,13 +129,24 @@ void kernelInitialize(stivale2_struct *stivaleInfo)
     ioapicCreateISARedirection(1, 1, 0);
     lapicStartTimer();
 
-    stivale2_struct_tag_smp  *smpStruct = (stivale2_struct_tag_smp *)stivale2_get_tag(stivaleInfo, STIVALE2_STRUCT_TAG_SMP_ID);
+    stivale2_struct_tag_smp *smpStruct = (stivale2_struct_tag_smp *)stivale2_get_tag(stivaleInfo, STIVALE2_STRUCT_TAG_SMP_ID);
     if (!smpStruct)
         kernelPanic("%! SMP struct was not found", "[SMP]");
 
     logDebugn("%! SMP struct was found. \
                 \n\t- BSP LAPIC id: %d, \
-                \n\t- CPU Count: %d ","[SMP]", smpStruct->bsp_lapic_id, smpStruct->cpu_count);
+                \n\t- CPU Count: %d ",
+              "[SMP]", smpStruct->bsp_lapic_id, smpStruct->cpu_count);
+
+    stivale2_struct_tag_modules *moduleStruct = (stivale2_struct_tag_modules *)stivale2_get_tag(stivaleInfo, STIVALE2_STRUCT_TAG_MODULES_ID);
+    if (!moduleStruct)
+        kernelPanic("Couldn't find stivale module struct");
+
+    stivale2_module *apStartup = stivale2_get_module(moduleStruct, "ap_startup");
+
+    if (!apStartup)
+        kernelPanic("Couldn't find AP Startup module");
+    logDebugn("%! AP startup module has been loaded at 0x%64x", "[SMP]", apStartup);
 }
 
 void kernelPanic(const char *msg, ...)

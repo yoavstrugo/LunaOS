@@ -9,7 +9,7 @@ static uint32_t sleepDivisor;
 void pitPrepareSleep(uint32_t microseconds)
 {
 	// Sanity check
-	if(microseconds > 54 * 1000)
+	if (microseconds > 54 * 1000)
 	{
 		logWarnn("%! illegal use of sleep. may only sleep up to 54000 microseconds", "[PIT]");
 		microseconds = 0;
@@ -36,9 +36,10 @@ void pitPerformSleep()
 
 	// Reset the PIT counter and let it start
 	uint8_t pitControlByte = ioInByte(0x61);
-	ioOutByte(0x61, (uint8_t) pitControlByte & ~1);	// clear bit 0
-	ioOutByte(0x61, (uint8_t) pitControlByte | 1);		// set bit 0
+	ioOutByte(0x61, (uint8_t)pitControlByte & ~1); // clear bit 0
+	ioOutByte(0x61, (uint8_t)pitControlByte | 1);  // set bit 0
 
 	// Wait for PIT counter to reach 0
-	while(!(ioInByte(0x61) & 0x20));
+	while (!(ioInByte(0x61) & 0x20))
+		;
 }
