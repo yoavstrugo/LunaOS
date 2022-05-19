@@ -147,3 +147,7 @@ void k_virtual_address_range_allocator::freeRange(virtual_address_t base)
     logDebugn("%! Successfully freed range of size %d pages, base 0x%64x", "[VAddr Allocator]", range->pages, range->base);
     this->mergeAll();
 }
+
+k_address_range_header* k_virtual_address_range_allocator::getRanges() {
+    return this->head;
+}

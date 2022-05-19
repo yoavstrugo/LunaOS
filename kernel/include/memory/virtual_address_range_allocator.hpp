@@ -51,6 +51,13 @@ struct k_virtual_address_range_allocator
      */
     void freeRange(virtual_address_t base);
 
+    /**
+     * @brief Returns all the ranges of this allocator
+     * 
+     * @return k_address_range_header* The head of the ranges linked list.
+     */
+    k_address_range_header *getRanges();
+
 private:
     // The head of the address range linked-list
     k_address_range_header *head;
