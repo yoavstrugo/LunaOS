@@ -65,14 +65,21 @@ struct k_paging_flags
     page_flags_t ptFlags;
 };
 
-#define PAGING_PAGETABLE_DEFAULT_FLAGS (PAGETABLE_PRESENT | PAGETABLE_READWRITE)
-#define PAGING_PAGE_DEFAULT_FLAGS (PAGE_PRESENT | PAGE_READWRITE)
+#define KERNEL_PAGING_PAGETABLE_DEFAULT_FLAGS (PAGETABLE_PRESENT | PAGETABLE_READWRITE)
+#define KERNEL_PAGING_PAGE_DEFAULT_FLAGS (PAGE_PRESENT | PAGE_READWRITE)
 
 const k_paging_flags PAGING_DEFAULT_FLAGS = {
-    .pml4Flags = PAGING_PAGETABLE_DEFAULT_FLAGS,
-    .pdptFlags = PAGING_PAGETABLE_DEFAULT_FLAGS,
-    .pdFlags = PAGING_PAGE_DEFAULT_FLAGS,
-    .ptFlags = PAGING_PAGE_DEFAULT_FLAGS};
+    .pml4Flags = KERNEL_PAGING_PAGETABLE_DEFAULT_FLAGS,
+    .pdptFlags = KERNEL_PAGING_PAGETABLE_DEFAULT_FLAGS,
+    .pdFlags = KERNEL_PAGING_PAGE_DEFAULT_FLAGS,
+    .ptFlags = KERNEL_PAGING_PAGE_DEFAULT_FLAGS};
+
+const k_paging_flags USERSPACE_DEFAULT_PAGING_FLAGS = {
+    .pml4Flags  = PAGETABLE_PRESENT | PAGETABLE_READWRITE   | PAGETABLE_USERSUPER,
+    .pdptFlags  = PAGETABLE_PRESENT | PAGETABLE_READWRITE   | PAGETABLE_USERSUPER,
+    .pdFlags    = PAGETABLE_PRESENT | PAGETABLE_READWRITE   | PAGETABLE_USERSUPER,
+    .ptFlags    = PAGE_PRESENT      | PAGE_READWRITE        | PAGE_USERSUPER
+};
 
 // TODO: add user space presets
 
@@ -103,8 +110,10 @@ void pagingMapPage(
  * @brief Unmap the virtual address if it is mapped, otherwise does nothing.
  *
  * @param virt  The virtual address.
+ * 
+ * @return physical_address_t The physical address that the page was mapped to, NULL wan't mapped.
  */
-void pagingUnmapPage(virtual_address_t virt);
+physical_address_t pagingUnmapPage(virtual_address_t virt);
 
 /**
  * @brief Initialize paging with some mappings.
