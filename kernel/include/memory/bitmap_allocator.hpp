@@ -1,13 +1,12 @@
 #pragma once
 
-#include <memory/PhysicalMemoryManager.hpp>
 #include <types.hpp>
 #include <stivale2.h>
 #include <stdint.h>
 #include <Bitmap.hpp>
 #include <strings.hpp>
 
-class BitmapAllocator : public PhysicalMemoryManager
+class BitmapAllocator
 {
 public:
     /**
