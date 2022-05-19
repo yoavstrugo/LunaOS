@@ -181,9 +181,10 @@ bool pagingIsPagetableEmpty(pagetable_entry_t *pagetable)
     return true;
 }
 
-void pagingUnmapPage(virtual_address_t virt)
+physical_address_t pagingUnmapPage(virtual_address_t virt)
 {
     pagetable_entry_t *pml4 = (pagetable_entry_t *)pagingGetCurrentSpace();
+    physical_address_t mappedPage = NULL;
 
     pagetable_entry_t pml4e = pml4[PML4_INDEXER(virt)];
     if (pml4e & PAGETABLE_PRESENT)
@@ -203,6 +204,9 @@ void pagingUnmapPage(virtual_address_t virt)
                 pagetable_entry_t pte = pt[PT_INDEXER(virt)];
                 if (pte & PAGE_PRESENT)
                 {
+                    // Get the physical address for the page
+                    mappedPage = ADDRESS_EXCLUDE(pte);
+
                     UNSET_FLAG(pte, PAGE_PRESENT);
                     pt[PT_INDEXER(virt)] = pte;
 
@@ -242,6 +246,8 @@ void pagingUnmapPage(virtual_address_t virt)
             }
         }
     }
+
+    return mappedPage;
 }
 
 void pagingInitialize(physical_address_t kernelBase, virtual_address_t hhdm)
