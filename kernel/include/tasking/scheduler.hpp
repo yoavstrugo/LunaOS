@@ -28,10 +28,10 @@ struct k_scheduler_job
 
 struct k_jobs_queue
 {
-    k_scheduler_job *head = NULL;
-    k_scheduler_job *tail = NULL;
+    k_scheduler_job *head;
+    k_scheduler_job *tail;
     uint64_t timeAllotment;
-    bool isEmpty = false;
+    bool isEmpty;
 };
 
 /**
