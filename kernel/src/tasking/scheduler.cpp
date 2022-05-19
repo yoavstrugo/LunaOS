@@ -37,13 +37,13 @@ k_thread *schedulerSchedule()
         schedulerPriorityBoost();
 
     if (runningJob == NULL ||
-        runningJob->thread->status == THREAD_STATUS::WAITING ||
-        runningJob->thread->status == THREAD_STATUS::STOPPED ||
+        runningJob->thread->status == WAITING ||
+        runningJob->thread->status == STOPPED ||
         runningJob->timeInPriority > jobsQueues[runningJob->priority].timeAllotment)
     {
         if (runningJob != NULL)
         {
-            if (runningJob->thread->status == THREAD_STATUS::STOPPED)
+            if (runningJob->thread->status == STOPPED)
             {
                 // The thread had stopped, remove it
                 schedulerRemoveJob(runningJob);
