@@ -55,6 +55,7 @@ override INTERNALCFLAGS :=   \
 	-ffreestanding       \
 	-masm=intel			 \
 	-fno-stack-protector \
+	-fno-exceptions		 \
 	-fno-rtti			 \
 	-fno-pic             \
 	-mabi=sysv           \
@@ -92,7 +93,7 @@ stivale2.h:
 	curl https://raw.githubusercontent.com/stivale/stivale/master/stivale2.h -o $(INCLUDESDIR)/$@
 
 # Link rules for the final kernel executable.
-$(KERNEL): $(OBJS)
+$(KERNEL): $(OBJS) 
 	@echo "--> Linking $^ to $@"
 	@$(LD) $(addprefix $(OBJDIR)/, $(notdir $^)) $(LDFLAGS) $(INTERNALLDFLAGS) -o $(BUILDDIR)/$@
 
@@ -102,12 +103,6 @@ $(DIRS):
 %_asm.o: %.asm
 	@echo "--> Assembling $^ to $@"
 	@$(ASMC) $(ASMFLAGS) $< -o $(OBJDIR)/$@
-
-requests.o: requests.cpp
-exceptions.o: exceptions.cpp
-requests.o exceptions.o:
-	@echo "--> Compiling with interrupt flags $^ to $@"
-	@$(CC) $(CFLAGS) -mgeneral-regs-only -mno-red-zone $(INTERNALCFLAGS) -c $< -o $(OBJDIR)/$@
 
 %.o: %.cpp stivale2.h
 	@echo "--> Compiling $^ to $@"
