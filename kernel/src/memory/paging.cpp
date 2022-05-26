@@ -22,7 +22,7 @@ void pagingMapPageInSpace(virtual_address_t virt, physical_address_t phys,
                   "[Paging]", virt, phys, pml4Addr);
 
     // Creating PDPT
-    pagetable_entry_t *pml4 = (pagetable_entry_t *)pml4Addr;
+    pagetable_entry_t *pml4 = (pagetable_entry_t *)PAGING_APPLY_DIRECTMAP(pml4Addr);
     pagetable_entry_t pml4e = pml4[PML4_INDEXER(virt)];
     if (pagingDeepDebug)
         logDebugn("\t- PML4 entry indexed %d", PML4_INDEXER(virt));
@@ -31,9 +31,9 @@ void pagingMapPageInSpace(virtual_address_t virt, physical_address_t phys,
     if (!(pml4e & PAGETABLE_PRESENT))
     {
         pml4e |= flags.pml4Flags;
-        pdpt = (pagetable_entry_t *)memoryPhysicalAllocator.allocatePage();
+        pdpt = (pagetable_entry_t *)PAGING_APPLY_DIRECTMAP(memoryPhysicalAllocator.allocatePage());
         memset((char *)pdpt, 0, PAGE_SIZE);
-        pml4e |= (uint64_t)pdpt;
+        pml4e |= (uint64_t)PAGING_REMOVE_DIRECTMAP(pdpt);
         pml4[PML4_INDEXER(virt)] = pml4e;
         if (pagingDeepDebug)
             logDebugn("\t- PDPT was created at 0x%64x", pdpt);
@@ -41,7 +41,7 @@ void pagingMapPageInSpace(virtual_address_t virt, physical_address_t phys,
     else
     {
         // Page directory pointer table is present, retrieve the address
-        pdpt = (pagetable_entry_t *)ADDRESS_EXCLUDE(pml4e);
+        pdpt = (pagetable_entry_t *)PAGING_APPLY_DIRECTMAP(ADDRESS_EXCLUDE(pml4e));
         // If override is on we will override the flags of the table
         if (override)
         {
@@ -67,9 +67,9 @@ void pagingMapPageInSpace(virtual_address_t virt, physical_address_t phys,
     if (!(pdpte & PAGETABLE_PRESENT))
     {
         pdpte |= flags.pdptFlags;
-        pd = (pagetable_entry_t *)memoryPhysicalAllocator.allocatePage();
+        pd = (pagetable_entry_t *)PAGING_APPLY_DIRECTMAP(memoryPhysicalAllocator.allocatePage());
         memset((char *)pd, 0, PAGE_SIZE);
-        pdpte |= (uint64_t)pd;
+        pdpte |= (uint64_t)PAGING_REMOVE_DIRECTMAP(pd);
         pdpt[PDPT_INDEXER(virt)] = pdpte;
         if (pagingDeepDebug)
             logDebugn("\t- PD was created at 0x%64x", pd);
@@ -77,7 +77,7 @@ void pagingMapPageInSpace(virtual_address_t virt, physical_address_t phys,
     else
     {
         // Page directory is present, retrieve the address
-        pd = (pagetable_entry_t *)ADDRESS_EXCLUDE(pdpte);
+        pd = (pagetable_entry_t *)PAGING_APPLY_DIRECTMAP(ADDRESS_EXCLUDE(pdpte));
         // If override is on we will override the flags of the table
         if (override)
         {
@@ -103,9 +103,9 @@ void pagingMapPageInSpace(virtual_address_t virt, physical_address_t phys,
     if (!(pde & PAGETABLE_PRESENT))
     {
         pde |= flags.pdFlags;
-        pt = (pagetable_entry_t *)memoryPhysicalAllocator.allocatePage();
+        pt = (pagetable_entry_t *)PAGING_APPLY_DIRECTMAP(memoryPhysicalAllocator.allocatePage());
         memset((char *)pt, 0, PAGE_SIZE);
-        pde |= (uint64_t)pt;
+        pde |= (uint64_t)PAGING_REMOVE_DIRECTMAP(pt);
         pd[PD_INDEXER(virt)] = pde;
         if (pagingDeepDebug)
             logDebugn("\t- PT was created at 0x%64x", pt);
@@ -113,7 +113,7 @@ void pagingMapPageInSpace(virtual_address_t virt, physical_address_t phys,
     else
     {
         // Page table is present, retrieve the address
-        pt = (pagetable_entry_t *)ADDRESS_EXCLUDE(pde);
+        pt = (pagetable_entry_t *)PAGING_APPLY_DIRECTMAP(ADDRESS_EXCLUDE(pde));
         // If override is on we will override the flags of the table
         if (override)
         {
@@ -181,25 +181,24 @@ bool pagingIsPagetableEmpty(pagetable_entry_t *pagetable)
     return true;
 }
 
-physical_address_t pagingUnmapPage(virtual_address_t virt)
-{
-    pagetable_entry_t *pml4 = (pagetable_entry_t *)pagingGetCurrentSpace();
+physical_address_t pagingUnmapPageInSpace(virtual_address_t virt, physical_address_t pml4Addr) {
+    pagetable_entry_t *pml4 = (pagetable_entry_t *)PAGING_APPLY_DIRECTMAP(pml4Addr);
     physical_address_t mappedPage = NULL;
 
     pagetable_entry_t pml4e = pml4[PML4_INDEXER(virt)];
     if (pml4e & PAGETABLE_PRESENT)
     {
-        pagetable_entry_t *pdpt = (pagetable_entry_t *)ADDRESS_EXCLUDE(pml4e);
+        pagetable_entry_t *pdpt = (pagetable_entry_t *)PAGING_APPLY_DIRECTMAP(ADDRESS_EXCLUDE(pml4e));
 
         pagetable_entry_t pdpte = pdpt[PDPT_INDEXER(virt)];
         if (pdpte & PAGETABLE_PRESENT)
         {
-            pagetable_entry_t *pd = (pagetable_entry_t *)ADDRESS_EXCLUDE(pdpte);
+            pagetable_entry_t *pd = (pagetable_entry_t *)PAGING_APPLY_DIRECTMAP(ADDRESS_EXCLUDE(pdpte));
 
             pagetable_entry_t pde = pd[PD_INDEXER(virt)];
             if (pde & PAGETABLE_PRESENT)
             {
-                pagetable_entry_t *pt = (pagetable_entry_t *)ADDRESS_EXCLUDE(pde);
+                pagetable_entry_t *pt = (pagetable_entry_t *)PAGING_APPLY_DIRECTMAP(ADDRESS_EXCLUDE(pde));
 
                 pagetable_entry_t pte = pt[PT_INDEXER(virt)];
                 if (pte & PAGE_PRESENT)
@@ -214,7 +213,7 @@ physical_address_t pagingUnmapPage(virtual_address_t virt)
                     if (pagingIsPagetableEmpty(pt))
                     {
                         // Free the PT space
-                        memoryPhysicalAllocator.freePage((physical_address_t)pt);
+                        memoryPhysicalAllocator.freePage(ADDRESS_EXCLUDE(pde));
 
                         // Unset the PRESENT bit in the PD entry
                         UNSET_FLAG(pde, PAGETABLE_PRESENT);
@@ -224,7 +223,7 @@ physical_address_t pagingUnmapPage(virtual_address_t virt)
                         if (pagingIsPagetableEmpty(pd))
                         {
                             // Free the PD space
-                            memoryPhysicalAllocator.freePage((physical_address_t)pd);
+                            memoryPhysicalAllocator.freePage(ADDRESS_EXCLUDE(pdpte));
 
                             // Unset the PRESENT bit in the PDPT entry
                             UNSET_FLAG(pdpte, PAGETABLE_PRESENT);
@@ -234,7 +233,7 @@ physical_address_t pagingUnmapPage(virtual_address_t virt)
                             if (pagingIsPagetableEmpty(pdpt))
                             {
                                 // Free the PDPT space
-                                memoryPhysicalAllocator.freePage((physical_address_t)pdpt);
+                                memoryPhysicalAllocator.freePage(ADDRESS_EXCLUDE(pml4e));
 
                                 // Unset the PRESENT bit in the PML4 entry
                                 UNSET_FLAG(pml4e, PAGETABLE_PRESENT);
@@ -250,6 +249,11 @@ physical_address_t pagingUnmapPage(virtual_address_t virt)
     return mappedPage;
 }
 
+physical_address_t pagingUnmapPage(virtual_address_t virt)
+{
+    return pagingUnmapPageInSpace(virt, pagingGetCurrentSpace());
+}
+
 void pagingInitialize(physical_address_t kernelBase, virtual_address_t hhdm)
 {
     physical_address_t pml4Addr = memoryPhysicalAllocator.allocatePage();
@@ -262,6 +266,7 @@ void pagingInitialize(physical_address_t kernelBase, virtual_address_t hhdm)
 
     // Map the higher half kernel
     pagingMapMemoryInTable(0xffffffff80000000, kernelBase, 0x80000000, pml4Addr, PAGING_DEFAULT_FLAGS, true);
+    
 
     pagingSwitchSpace(pml4Addr);
 }
@@ -284,13 +289,13 @@ physical_address_t pagingGetCurrentSpace()
 
 physical_address_t pagingVirtualToPhysical(virtual_address_t virt)
 {
-    pagetable_entry_t *pml4 = (pagetable_entry_t *)(pagingGetCurrentSpace() + HHDM);
+    pagetable_entry_t *pml4 = (pagetable_entry_t *)PAGING_APPLY_DIRECTMAP(pagingGetCurrentSpace());
 
     pagetable_entry_t pml4e = pml4[PML4_INDEXER(virt)];
     if (!(pml4e & PAGETABLE_PRESENT))
         return NULL;
 
-    pagetable_entry_t *pdpt = (pagetable_entry_t *)(ADDRESS_EXCLUDE(pml4e) + HHDM);
+    pagetable_entry_t *pdpt = (pagetable_entry_t *)PAGING_APPLY_DIRECTMAP(ADDRESS_EXCLUDE(pml4e));
 
     pagetable_entry_t pdpte = pdpt[PDPT_INDEXER(virt)];
     if (!(pdpte & PAGETABLE_PRESENT))
@@ -298,7 +303,7 @@ physical_address_t pagingVirtualToPhysical(virtual_address_t virt)
     if (CHECK_FLAG(pdpte, PAGETABLE_PAGE_SIZE))
         return ADDRESS_EXCLUDE(pdpte); // Handle 4GiB pages
 
-    pagetable_entry_t *pd = (pagetable_entry_t *)(ADDRESS_EXCLUDE(pdpte) + HHDM);
+    pagetable_entry_t *pd = (pagetable_entry_t *)PAGING_APPLY_DIRECTMAP(ADDRESS_EXCLUDE(pdpte));
 
     pagetable_entry_t pde = pd[PD_INDEXER(virt)];
     if (!(pde & PAGETABLE_PRESENT))
@@ -306,11 +311,19 @@ physical_address_t pagingVirtualToPhysical(virtual_address_t virt)
     if (CHECK_FLAG(pde, PAGETABLE_PAGE_SIZE))
         return ADDRESS_EXCLUDE(pde); // Handle 2MiB pages
 
-    pagetable_entry_t *pt = (pagetable_entry_t *)(ADDRESS_EXCLUDE(pde) + HHDM);
+    pagetable_entry_t *pt = (pagetable_entry_t *)PAGING_APPLY_DIRECTMAP(ADDRESS_EXCLUDE(pde));
 
     pagetable_entry_t pte = pt[PT_INDEXER(virt)];
     if (!(pte & PAGE_PRESENT))
         return NULL;
 
     return (physical_address_t)(ADDRESS_EXCLUDE(pte) + OFFSET_EXCLUDE(virt));
+}
+
+ 
+void pagingCopyKernelMappings(physical_address_t dest) {
+    pagetable_entry_t *currPML4 = (pagetable_entry_t *)PAGING_APPLY_DIRECTMAP(pagingGetCurrentSpace());
+    pagetable_entry_t *destPML4 = (pagetable_entry_t *)PAGING_APPLY_DIRECTMAP(dest);
+    for (uint64_t i = 256; i < 512; i++)
+        destPML4[i] = currPML4[i];    
 }

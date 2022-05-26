@@ -57,6 +57,9 @@ const uint64_t PAGE_EXEC = (uint64_t)1 << 63;
 #define PAGING_ALIGN_PAGE_DOWN(v) ((v) & ~(PAGE_SIZE - 1))
 #define PAGING_ALIGN_PAGE_UP(v) (((v) & (PAGE_SIZE - 1)) ? (PAGING_ALIGN_PAGE_DOWN(v) + PAGE_SIZE) : (v))
 
+#define PAGING_APPLY_DIRECTMAP(p)   ((uint64_t)(p) + HHDM)
+#define PAGING_REMOVE_DIRECTMAP(v)   ((uint64_t)(v) - HHDM)
+
 struct k_paging_flags
 {
     pagetable_flags_t pml4Flags;
@@ -107,6 +110,20 @@ void pagingMapPage(
     bool override = false);
 
 /**
+ * @brief Map the the virtual address to the physical address in the current space.
+ *
+ * @param virt  The virtual address
+ * @param phys  The physical address
+ * @param pml4Addr The physical address for the pml4
+ * @param flags The flags
+ * @param override Whether or not to override if the virtual address is already mapped.
+ */
+void pagingMapPageInSpace(virtual_address_t virt, physical_address_t phys,
+                          physical_address_t pml4Addr,
+                          k_paging_flags flags = PAGING_DEFAULT_FLAGS,
+                          bool override = false);
+
+/**
  * @brief Unmap the virtual address if it is mapped, otherwise does nothing.
  *
  * @param virt  The virtual address.
@@ -114,6 +131,16 @@ void pagingMapPage(
  * @return physical_address_t The physical address that the page was mapped to, NULL wan't mapped.
  */
 physical_address_t pagingUnmapPage(virtual_address_t virt);
+
+/**
+ * @brief Unmap the virtual address if it is mapped in the given space, otherwise does nothing.
+ *
+ * @param virt  The virtual address.
+ * @param pml4Addr  The address of the PML4
+ * 
+ * @return physical_address_t The physical address that the page was mapped to, NULL wan't mapped.
+ */
+physical_address_t pagingUnmapPageInSpace(virtual_address_t virt, physical_address_t pml4Addr);
 
 /**
  * @brief Initialize paging with some mappings.
@@ -142,3 +169,10 @@ physical_address_t pagingGetCurrentSpace();
  * @return physical_address_t   The physical address mapped by the virtual address, NULL if it's not mapped
  */
 physical_address_t pagingVirtualToPhysical(virtual_address_t virt);
+
+/**
+ * @brief Copy the kernel mappings into the destination pml4
+ * 
+ * @param dest The destination pml4
+ */
+void pagingCopyKernelMappings(physical_address_t dest);
