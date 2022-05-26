@@ -33,6 +33,13 @@ struct k_userspace_allocator
     void allocateUserspaceHeap();
 
     /**
+     * @brief Returns the address to the PML4 of this process space
+     * 
+     * @return physical_address_t The physical address of the PML4
+     */
+    physical_address_t getSpace();
+
+    /**
      * @brief Frees all the allocated memory in this allocator
      * 
      */
@@ -91,5 +98,7 @@ struct k_userspace_allocator
 private:
     virtual_address_t userspaceCodeStart;
     virtual_address_t userspaceHeapStart;
-    k_virtual_address_range_allocator threadsStackAllocator;
+    physical_address_t pml4Physical;
+    virtual_address_t pml4Virtual;
+    k_virtual_address_range_allocator *threadsStackAllocator;
 };
