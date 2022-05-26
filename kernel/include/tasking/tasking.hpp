@@ -3,9 +3,9 @@
 #include <types.hpp>
 #include <stdint.h>
 #include <memory/userspace_allocator.hpp>
+#include <syscalls/syscalls.hpp>
 
 #define USERSPACE_IMAGE_END 0xFFFF800000000000
-#define USERSPACE_HEAP_INITIAL_SIZE 1 * GiB
 
 struct k_process;
 struct k_thread;
@@ -21,8 +21,47 @@ enum THREAD_STATUS
     // If the thread is waiting for something (IO for example)
     WAITING,
     // If the thread had stopped running
-    STOPPED
+    DEAD
 };
+
+enum THREAD_PRIVILEGE
+{
+    KERNEL,
+    USER
+};
+
+struct k_thread_state {
+    register_t rax;
+    register_t rbx;
+    register_t rcx;
+    register_t rdx;
+
+    register_t rsi;
+    register_t rdi;
+
+    register_t r8;
+    register_t r9;
+    register_t r10;
+    register_t r11;
+    register_t r12;
+    register_t r13;
+    register_t r14;
+    register_t r15;
+
+    register_t rbp;
+
+    register_t gs;
+    register_t fs;
+
+    uint64_t interruptCode;
+    uint64_t errorCode;
+
+    register_t rip;
+    register_t cs;
+    register_t rflags;
+    register_t rsp;
+    register_t ds;
+}__attribute__((packed));
 
 struct k_thread
 {
@@ -33,6 +72,8 @@ struct k_thread
 
     // The thread's status
     THREAD_STATUS status;
+
+    THREAD_PRIVILEGE privilege;
 
     /**
      * @brief The thread's stack
@@ -46,30 +87,16 @@ struct k_thread
     } stack;
 
     /**
-     * @brief The state of the thread, the general-purpose registers
+     * @brief The state of the thread.
      */
-    struct
-    {
-        register_t rax;
-        register_t rbx;
-        register_t rcx;
-        register_t rdx;
+    k_thread_state *context;
 
-        register_t rsi;
-        register_t rdi;
-
-        register_t rsp;
-        register_t rbp;
-
-        register_t r8;
-        register_t r9;
-        register_t r10;
-        register_t r11;
-        register_t r12;
-        register_t r13;
-        register_t r14;
-        register_t r15;
-    } state;
+    // If this thread is a syscall
+    struct {
+        syscall_handler_t handler;
+        void *data;
+        k_thread *targetThread;
+    } syscall;
 };
 
 /**
@@ -94,7 +121,7 @@ struct k_process
     // The list of the process' threads
     k_thread_entry *threads;
 
-    k_userspace_allocator processAllocator;
+    k_userspace_allocator *processAllocator;
 };
 
 /**
@@ -123,11 +150,6 @@ struct k_processor_tasking
     k_thread *currentThread;
 
     /**
-     * @brief A list of all the processor's threads
-     */
-    k_thread_entry *threads;
-
-    /**
      * @brief A list of all the processor's processes
      */
     k_process_entry *processes;
@@ -143,7 +165,7 @@ struct k_processor_tasking
         /**
          * @brief The next process' id
          */
-        uint64_t nextPID = 0;
+        uint64_t nextPID;
 };
 
 void taskingDumpProcesses();
@@ -154,6 +176,19 @@ void taskingDumpProcesses();
  * @param numOfCPUs How many cpus aer in the PC
  */
 void taskingInitialize(uint8_t numOfCPUs);
+
+/**
+ * @brief Use the scheduler to decide the next process to run and does a context switch
+ * 
+ */
+void taskingSwitch();
+
+/**
+ * @brief Returns the currently running thread
+ * 
+ * @return k_thread* The running thread
+ */
+k_thread *taskingGetRunningThread();
 
 /**
  * @brief Add a CPU to the list
@@ -174,6 +209,21 @@ k_process *taskingCreateProcess();
  *
  * @param entryPoint The entry point to the thread
  * @param process The process which the thread belong to
+ * @param privilege The privilege for the thread
  * @return k_thread* The created thread
  */
-k_thread *taskingCreateThread(virtual_address_t entryPoint, k_process *process);
+k_thread *taskingCreateThread(virtual_address_t entryPoint, k_process *process, THREAD_PRIVILEGE privilege = USER);
+
+/**
+ * @brief Returns the current processor
+ * 
+ * @return k_processor_tasking* The processor's tasking structure
+ */
+k_processor_tasking *taskingGetProcessor();
+
+/**
+ * @brief Sets up all the privileges required for a thread base on its privilege field
+ * 
+ * @param thread The thread
+ */
+void taskingSetupPrivileges(k_thread *thread);
