@@ -27,6 +27,9 @@
 #include <system/acpi/madt.hpp>
 
 #include <tasking/tasking.hpp>
+#include <tasking/scheduler.hpp>
+
+#include <syscalls/syscalls_tasking.hpp>
 
 // We need to tell the stivale bootloader where we want our stack to be.
 // We are going to allocate our stack as an array in .bss.
@@ -97,12 +100,16 @@ extern "C" void kernelMain(stivale2_struct *stivale2Struct)
     // kernelHalt();
 }
 
+void threadProgram() {
+    logInfon("%! THREAD IS RUNNING!", "[THREAD]");
+}
+
 void kernelInitialize(stivale2_struct *stivaleInfo)
 {
     loggerInitialize(stivaleInfo);
     logDebugn("Logger has been initialized.");
 
-    logDebugn("%! Stack is located at %x", "[STACK]", &stack);
+    logDebugn("%! Stack is located at 0x%64x", "[STACK]", &stack);
 
     gdtInitialize();
 
@@ -126,21 +133,18 @@ void kernelInitialize(stivale2_struct *stivaleInfo)
         madtParse(madtHeader);
     }
 
+    schedulerInit();
+    
+    taskingInitialize(1);
+    taskingAddCPU(0);
+
+    k_process *proc = taskingCreateProcess();
+    taskingCreateThread((virtual_address_t)threadProgram, proc, KERNEL);
+
     lapicInitialize();
 
     ioapicCreateISARedirection(1, 1, 0);
     lapicStartTimer();
-
-    taskingInitialize(1);
-    taskingAddCPU(0);
-
-    taskingCreateProcess();
-    taskingCreateProcess();
-    taskingCreateProcess();
-    taskingCreateProcess();
-    taskingCreateProcess();
-
-    taskingDumpProcesses();
 }
 
 void kernelPanic(const char *msg, ...)
@@ -169,4 +173,9 @@ void kernelHalt()
     {
         asm("hlt");
     }
+}
+
+virtual_address_t kernelGetStack() {
+    return NULL;
+    // return (virtual_address_t)stack;
 }
