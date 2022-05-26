@@ -1,6 +1,7 @@
 #include <Renderer.hpp>
 
 #include <strings.hpp>
+#include <memory/memory.hpp>
 
 #define PIXEL uint32_t /* pixel pointer */
 #define TABSIZE 4
@@ -67,6 +68,11 @@ void Renderer::printf(const char *format, va_list arg)
         case 'x':
             i = va_arg(arg, uint64_t);
             _print(toHex((uint64_t)i, true));
+            break;
+        case 'm':
+            i = va_arg(arg, uint64_t);
+            _print(toString(K_MEMORY_SIZE(i)));
+            _print(K_MEMORY_UNIT(i));
             break;
         case '!':
             s = va_arg(arg, char *);
