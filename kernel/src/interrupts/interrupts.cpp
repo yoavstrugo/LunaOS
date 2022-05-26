@@ -5,6 +5,10 @@
 #include <interrupts/exceptions.hpp>
 #include <interrupts/requests.hpp>
 #include <kernel.hpp>
+#include <syscalls/syscalls.hpp>
+#include <tasking/tasking.hpp>
+#include <interrupts/lapic.hpp>
+#include <stddef.h>
 
 void interruptsInitialize()
 {
@@ -26,9 +30,47 @@ void interruptsDisable()
 
 void interruptsInstallRoutines()
 {
-    idtCreateEntry(0x08, (uint64_t)exceptionDoubleFault, 0x08, 0x00, K_IDT_TA_INTERRUPT);
-    idtCreateEntry(0x0D, (uint64_t)exceptionGPFault, 0x08, 0x00, K_IDT_TA_INTERRUPT);
-    idtCreateEntry(0x0E, (uint64_t)exceptionPageFault, 0x08, 0x00, K_IDT_TA_INTERRUPT);
-    idtCreateEntry(0x20, (uint64_t)requestTimer, 0x08, 0x00, K_IDT_TA_INTERRUPT);
-    idtCreateEntry(0x21, (uint64_t)requestKeyboardInt, 0x08, 0x00, K_IDT_TA_INTERRUPT);
+    idtCreateEntry(0x08, (uint64_t)_iExc8, exceptionDoubleFault, 0x08, 0x00, K_IDT_TA_INTERRUPT);
+    idtCreateEntry(0x0D, (uint64_t)_iExc13, exceptionGPFault, 0x08, 0x00, K_IDT_TA_INTERRUPT);
+    idtCreateEntry(0x0E, (uint64_t)_iExc14, exceptionPageFault, 0x08, 0x00, K_IDT_TA_INTERRUPT);
+    idtCreateEntry(0x20, (uint64_t)_iReq32, requestTimer, 0x08, 0x00, K_IDT_TA_INTERRUPT);
+    idtCreateEntry(0x21, (uint64_t)_iReq33, requestKeyboardInt, 0x08, 0x00, K_IDT_TA_INTERRUPT);
+}
+
+k_thread_state *interruptHandler(k_thread_state *rsp)
+{
+    k_thread *thread = taskingGetRunningThread();
+
+    if (thread)
+    {
+        thread->context = rsp;
+
+        if (thread->context->interruptCode < 0x20)
+        {
+            exceptionHandlers[thread->context->interruptCode]();
+        }
+        else if (thread->context->interruptCode == 0x80)
+        {
+            // System call request
+            syscallHandle(thread);
+        }
+        else
+        {
+            requestHandlers[thread->context->interruptCode - 0x20]();
+        }
+
+    }
+    else
+    {
+        taskingSwitch();
+        thread = taskingGetRunningThread();
+        thread->context = rsp;
+    }
+    // Change address space back
+    // pagingSwitchSpace(thread->process->addressSpace);
+
+    // TODO: tss?
+    lapicSendEOI();
+    rsp = thread->context;
+    return rsp;
 }

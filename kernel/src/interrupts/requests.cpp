@@ -4,24 +4,18 @@
 #include <interrupts/pic.hpp>
 #include <interrupts/lapic.hpp>
 #include <io.hpp>
+#include <tasking/scheduler.hpp>
 
-void requestKeyboardInt(interrupt_frame *frame)
+void (*requestHandlers[224])();
+
+void requestKeyboardInt()
 {
     logInfon("Pressed!");
     ioInByte(0x60);
-    lapicSendEOI();
 }
 
-uint64_t count = 0;
-uint64_t seconds = 0;
-
-void requestTimer(interrupt_frame *frame)
+void requestTimer()
 {
-    // count++;
-    // if (count >= 1000) {
-    //     count = 0;
-    //     seconds++;
-    //     logDebugn("%! %ds", "[APIC Timer]", seconds);
-    // }
-    lapicSendEOI();
+    schedulerTime();
+    taskingSwitch();
 }

@@ -2,17 +2,19 @@
 
 #include <kernel.hpp>
 
-void exceptionDoubleFault(interrupt_frame *frame)
+void (*exceptionHandlers[32])();
+
+void exceptionDoubleFault()
 {
     kernelPanic("%! A double fault has occurred!", "Memory Exception:");
 }
 
-void exceptionGPFault(interrupt_frame *frame)
+void exceptionGPFault()
 {
     kernelPanic("%! A general protection fault has occurred!", "Memory Exception:");
 }
 
-void exceptionPageFault(interrupt_frame *frame)
+void exceptionPageFault()
 {
     kernelPanic("%! A page fault has occurred!", "Memory Exception:");
 }

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <stdint.h>
+#include <tasking/tasking.hpp>
+
 void interruptsInitialize();
 
 /**
@@ -19,3 +22,5 @@ void interruptsDisable();
  *
  */
 void interruptsEnable();
+
+extern "C" k_thread_state * interruptHandler(k_thread_state *rsp);
