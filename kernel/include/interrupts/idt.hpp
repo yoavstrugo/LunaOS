@@ -29,11 +29,12 @@ struct k_idt_entry
  *
  * @param idx               The index in the IDT to put the entry in
  * @param offset            The address of the Interrupt Service Routine
+ * @param handler           The address to the interrupt handler
  * @param segmentSelector   The segment offset of the Interrupt Service Routine segment in the GDT
  * @param ist               Offset to the Interrupt Stack Table
  * @param flags             Flags.
  */
-void idtCreateEntry(uint8_t idx, uint64_t offset, uint16_t segmentSelector, uint8_t ist, uint8_t flags);
+void idtCreateEntry(uint8_t idx, uint64_t offset, void (*handler)(), uint16_t segmentSelector, uint8_t ist, uint8_t flags);
 
 /**
  * @brief Create the IDT descriptor
