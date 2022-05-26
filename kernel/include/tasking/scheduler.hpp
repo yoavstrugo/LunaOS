@@ -48,6 +48,12 @@ void schedulerInit();
 uint64_t schedulerGetTimeAllotment(job_priority_t priority);
 
 /**
+ * @brief Adds the default timings to all the jobs
+ * 
+ */
+void schedulerTime();
+
+/**
  * @brief Decide the next thread to run
  *
  * @return k_thread The selected thread to run

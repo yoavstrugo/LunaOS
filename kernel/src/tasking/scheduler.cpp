@@ -3,6 +3,8 @@
 #include <memory/heap.hpp>
 #include <interrupts/lapic.hpp>
 
+#include <logger/logger.hpp>
+
 k_jobs_queue jobsQueues[K_CONST_SCHEDULER_QUEUES];
 k_scheduler_job *runningJob;
 uint64_t priorityBoostTime;
@@ -28,22 +30,25 @@ uint64_t schedulerGetTimeAllotment(uint8_t priority)
            K_CONST_MINIMUM_TIMESLICE;
 }
 
-k_thread *schedulerSchedule()
+void schedulerTime()
 {
     if (runningJob != NULL)
         runningJob->timeInPriority += APIC_TIMER_TIMESLOT_MS;
     priorityBoostTime += APIC_TIMER_TIMESLOT_MS;
     if (priorityBoostTime > K_CONST_PRIORITY_BOOST)
         schedulerPriorityBoost();
+}
 
+k_thread *schedulerSchedule()
+{
     if (runningJob == NULL ||
         runningJob->thread->status == WAITING ||
-        runningJob->thread->status == STOPPED ||
+        runningJob->thread->status == DEAD ||
         runningJob->timeInPriority > jobsQueues[runningJob->priority].timeAllotment)
     {
         if (runningJob != NULL)
         {
-            if (runningJob->thread->status == STOPPED)
+            if (runningJob->thread->status == DEAD)
             {
                 // The thread had stopped, remove it
                 schedulerRemoveJob(runningJob);
@@ -55,8 +60,12 @@ k_thread *schedulerSchedule()
             {
                 // First remove it from the current priority
                 schedulerRemoveJob(runningJob);
-                // Now add it to one lower priority
-                schedulerAddJob(runningJob, runningJob->priority + 1);
+
+                // Kernel jobs shouldn't be demoted, but only go to the "back of the line"
+                if (runningJob->thread->privilege == USER)
+                    // Now add it to one lower priority
+                    schedulerAddJob(runningJob, runningJob->priority + 1);
+
                 // Reset it's time
                 runningJob->timeInPriority = 0;
             }
@@ -68,13 +77,24 @@ k_thread *schedulerSchedule()
             if (jobsQueues[priority].isEmpty)
                 continue;
 
+            k_scheduler_job *job = jobsQueues[priority].head;
+
+            // Get the next ready to run job
+            while (job && job->thread->status != READY)
+            {
+                // Move it to the queue's end
+                schedulerRemoveJob(runningJob);
+                schedulerAddJob(runningJob, priority);
+            }
+
+            logDebugn("\t- Selected job to run");
+            logDebugn("\t\t* Priority %d", priority);
+            logDebugn("\t\t* Parent PID %d", job->thread->process->pid);
+
             // Round-robin on the highest priority queue
             // Therefore the current job to run is the first job
-            runningJob = jobsQueues[priority].head;
-
-            // Move it to the queue's end
-            schedulerRemoveJob(runningJob);
-            schedulerAddJob(runningJob, priority);
+            runningJob = job;
+            break;
         }
     }
 
@@ -116,6 +136,9 @@ void schedulerRemoveJob(k_scheduler_job *job)
         next->prev = job->prev;
     else
         jobsQueues[priority].tail = job->prev;
+
+    if (jobsQueues[priority].head == NULL)
+        jobsQueues[priority].isEmpty = true;
 }
 
 void schedulerAddJob(k_scheduler_job *job, job_priority_t priority)
@@ -128,7 +151,10 @@ void schedulerAddJob(k_scheduler_job *job, job_priority_t priority)
     job->next = NULL;
     if (jobsQueues[priority].tail != NULL)
         jobsQueues[priority].tail->next = job;
+    if (jobsQueues[priority].head == NULL)
+        jobsQueues[priority].head = job;
     jobsQueues[priority].tail = job;
+    jobsQueues[priority].isEmpty = false;
 }
 
 void schedulerNewJob(k_thread *thread)
