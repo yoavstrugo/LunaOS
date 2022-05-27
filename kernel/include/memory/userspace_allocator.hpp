@@ -9,6 +9,7 @@
 #define USERSPACE_HEAP_INITIAL_SIZE     2 * MiB
 #define USERSPACE_HEAP_EXPANSION        2 * MiB
 #define USERSPACE_STACK_SIZE            10 * PAGE_SIZE
+#define INTERRUPT_STACK_SIZE            2 * PAGE_SIZE
 #define USERSPACE_STACK_MAX             0xFFFF400000000000
 
 struct k_userspace_allocator
@@ -55,10 +56,19 @@ struct k_userspace_allocator
      * @brief Allocated a new stack for a thread
      *
      * @param stackSize The size of the stack
+     * @param privilege Should the stack be located on the kernel?
      *
      * @return virtual_address_t The start of the stack
      */
-    virtual_address_t allocateStack(uint64_t stackSize);
+    virtual_address_t allocateStack(uint64_t stackSize, bool kernelStack);
+
+    /**
+     * @brief Allocates an interrupt stack on the kernel space
+     * 
+     * @param stackSize The size of the stack
+     * @return virtual_address_t The address to the stack start
+     */
+    virtual_address_t allocateInterruptStack(uint64_t stackSize);
 
     /**
      * @brief Frees an allocated stack
@@ -101,4 +111,5 @@ private:
     physical_address_t pml4Physical;
     virtual_address_t pml4Virtual;
     k_virtual_address_range_allocator *threadsStackAllocator;
+    k_address_range_header *kernelspaceRanges;
 };

@@ -13,7 +13,7 @@ k_userspace_allocator::k_userspace_allocator()
     this->userspaceHeapStart = NULL;
     this->threadsStackAllocator = new k_virtual_address_range_allocator();
     this->threadsStackAllocator->addRange(USERSPACE_MEMORY_START + 0x1000, USERSPACE_STACK_MAX);
-    
+
     // Map the memory for the process
     this->pml4Physical = memoryPhysicalAllocator.allocatePage();
 
@@ -22,7 +22,8 @@ k_userspace_allocator::k_userspace_allocator()
     logDebugn("%! Mapped kernel to process' space.", "[Userspace Allocator]");
 }
 
-physical_address_t k_userspace_allocator::getSpace() {
+physical_address_t k_userspace_allocator::getSpace()
+{
     return this->pml4Physical;
 }
 
@@ -36,7 +37,7 @@ void k_userspace_allocator::allocateUserspaceCode(uint64_t userspaceCodeSize)
     for (uint64_t page = 0; page < pages; page++)
     {
         physical_address_t phys = memoryPhysicalAllocator.allocatePage();
-        virtual_address_t  virt = this->userspaceCodeStart + PAGE_SIZE * page;
+        virtual_address_t virt = this->userspaceCodeStart + PAGE_SIZE * page;
 
         // Map the page
         pagingMapPageInSpace(virt, phys, this->pml4Physical, USERSPACE_DEFAULT_PAGING_FLAGS);
@@ -44,7 +45,8 @@ void k_userspace_allocator::allocateUserspaceCode(uint64_t userspaceCodeSize)
     logDebugn("%! Mapped code area from 0x%64x with size %m.", "[Userspace Allocator]", this->userspaceCodeStart, userspaceCodeSize);
 }
 
-void k_userspace_allocator::allocateUserspaceHeap() {
+void k_userspace_allocator::allocateUserspaceHeap()
+{
     if (!this->userspaceCodeStart)
         kernelPanic("%! Cannot allocate heap before code was allocated.", "[Userspace Allocator]");
 
@@ -60,8 +62,10 @@ void k_userspace_allocator::allocateUserspaceHeap() {
     logDebugn("%! Allocated heap at 0x%64x-0x%64x.", "[Userspace Allocator]", heapStart, heapEnd);
 }
 
-void k_userspace_allocator::expandUserspaceHeap() {
-    if (this->userspaceHeapStart - USERSPACE_HEAP_EXPANSION < USERSPACE_STACK_MAX) {
+void k_userspace_allocator::expandUserspaceHeap()
+{
+    if (this->userspaceHeapStart - USERSPACE_HEAP_EXPANSION < USERSPACE_STACK_MAX)
+    {
         logWarnn("%! Cannot grow heap any larger.", "[Userspace Allocator]");
         // TODO: do something about this
         return;
@@ -80,7 +84,8 @@ void k_userspace_allocator::expandUserspaceHeap() {
     logDebugn("%! Heap expanded now at starts at 0x%64x (instead of 0x%64x)", "[Userspace Allocator]", this->userspaceHeapStart, oldStart);
 }
 
-void k_userspace_allocator::free() {
+void k_userspace_allocator::free()
+{
 
     logDebugn("%! Freeing process' memory", "[Userspace Allocator]");
     // Free userspace code
@@ -99,28 +104,69 @@ void k_userspace_allocator::free() {
     }
     logDebugn("\t- Heap has been freed");
 
-    
-    // Free stacks
+    // Free userspace stacks
     k_address_range_header *range = this->threadsStackAllocator->getRanges();
-    while (range) {
-        if (range->used) {
+    while (range)
+    {
+        if (range->used)
+        {
             virtual_address_t virt = range->base;
             uint64_t pages = range->pages;
 
             // Unmap and free each page
-            for (uint64_t page = 0; page < pages; page++) {
+            for (uint64_t page = 0; page < pages; page++)
+            {
                 physical_address_t phys = pagingUnmapPageInSpace(virt + PAGE_SIZE * page, this->pml4Physical);
                 memoryPhysicalAllocator.freePage(phys);
             }
         }
         range = range->next;
     }
-    logDebugn("\t- Stacks has been freed");
+    logDebugn("\t- Userspace stacks has been freed");
+
+    // Free kernelspace stacks and interrupt stacks
+    range = this->kernelspaceRanges;
+    while (range)
+    {
+        if (range->used)
+        {
+            virtual_address_t virt = range->base;
+            uint64_t pages = range->pages;
+
+            // Unmap and free each page
+            for (uint64_t page = 0; page < pages; page++)
+            {
+                physical_address_t phys = pagingUnmapPageInSpace(virt + PAGE_SIZE * page, this->pml4Physical);
+                memoryPhysicalAllocator.freePage(phys);
+            }
+        }
+        range = range->next;
+    }
+    logDebugn("\t- Kernelspace stacks and interrupt stacks has been freed");
 }
 
-virtual_address_t k_userspace_allocator::allocateStack(uint64_t stackSize) {
+virtual_address_t k_userspace_allocator::allocateStack(uint64_t stackSize, bool kernelStack)
+{
     uint64_t pages = PAGING_ALIGN_PAGE_UP(stackSize) / PAGE_SIZE;
-    virtual_address_t stackPtr = this->threadsStackAllocator->allocateRange(pages);
+
+    virtual_address_t stackPtr;
+    k_paging_flags flags;
+    if (!kernelStack)
+    {
+        stackPtr = this->threadsStackAllocator->allocateRange(pages);
+        flags = USERSPACE_DEFAULT_PAGING_FLAGS;
+    }
+    else
+    {
+        stackPtr = virtualAddressRangeAllocator.allocateRange(pages);
+        k_address_range_header *range = new k_address_range_header();
+        range->base = stackPtr;
+        range->pages = pages;
+        range->next = this->kernelspaceRanges;
+        this->kernelspaceRanges = range->next;
+        flags = PAGING_DEFAULT_FLAGS;
+    }
+
     if (!stackPtr)
     {
         logWarnn("%! Couldn't allocate %d pages for a thread stack", "[Userspace Allocator]", pages);
@@ -132,30 +178,67 @@ virtual_address_t k_userspace_allocator::allocateStack(uint64_t stackSize) {
     for (uint64_t page = 0; page < pages; page++)
     {
         physical_address_t phys = memoryPhysicalAllocator.allocatePage();
-        pagingMapPageInSpace(stackPtr + PAGE_SIZE * page, phys, this->pml4Physical, USERSPACE_DEFAULT_PAGING_FLAGS);
+        pagingMapPageInSpace(stackPtr + PAGE_SIZE * page, phys, this->pml4Physical, flags);
     }
-    
+
     logDebugn("%! Allocated stack starting at 0x%64x with size %m", "[Userspace Allocator]", stackPtr, PAGING_ALIGN_PAGE_UP(stackSize));
 
     return stackPtr;
 }
 
-void k_userspace_allocator::freeStack(virtual_address_t stackPtr) {
+virtual_address_t k_userspace_allocator::allocateInterruptStack(uint64_t stackSize)
+{
+    uint64_t pages = PAGING_ALIGN_PAGE_UP(stackSize) / PAGE_SIZE;
+
+    virtual_address_t stackPtr;
+
+    stackPtr = virtualAddressRangeAllocator.allocateRange(pages);
+    k_address_range_header *range = new k_address_range_header();
+    range->base = stackPtr;
+    range->pages = pages;
+    range->next = this->kernelspaceRanges;
+    this->kernelspaceRanges = range->next;
+
+    if (!stackPtr)
+    {
+        logWarnn("%! Couldn't allocate %d pages for a thread interrupt stack", "[Userspace Allocator]", pages);
+        // TODO: do something about it
+        return NULL;
+    }
+
+    // Allocated on physical memory
+    for (uint64_t page = 0; page < pages; page++)
+    {
+        physical_address_t phys = memoryPhysicalAllocator.allocatePage();
+        pagingMapPageInSpace(stackPtr + PAGE_SIZE * page, phys, this->pml4Physical, PAGING_DEFAULT_FLAGS);
+    }
+
+    logDebugn("%! Allocated interrupt stack starting at 0x%64x with size %m", "[Userspace Allocator]", stackPtr, PAGING_ALIGN_PAGE_UP(stackSize));
+
+    return stackPtr;
+}
+
+void k_userspace_allocator::freeStack(virtual_address_t stackPtr)
+{
     this->threadsStackAllocator->freeRange(stackPtr);
 }
 
-virtual_address_t k_userspace_allocator::getUserspaceCodeStart() {
+virtual_address_t k_userspace_allocator::getUserspaceCodeStart()
+{
     return this->userspaceCodeStart;
 }
 
-virtual_address_t k_userspace_allocator::getUserspaceCodeEnd() {
+virtual_address_t k_userspace_allocator::getUserspaceCodeEnd()
+{
     return 0xFFFF800000000000;
 }
 
-virtual_address_t k_userspace_allocator::getUserspaceHeapStart() {
+virtual_address_t k_userspace_allocator::getUserspaceHeapStart()
+{
     return this->userspaceHeapStart;
 }
 
-virtual_address_t k_userspace_allocator::getUserspaceHeapEnd() {
+virtual_address_t k_userspace_allocator::getUserspaceHeapEnd()
+{
     return this->userspaceCodeStart;
 }
