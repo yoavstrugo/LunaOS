@@ -40,8 +40,7 @@ isr_wrapper:
     pop gs
     pop fs
     mov eax, gs
-    mov ss, eax
-    mov es, eax
+    mov ds, eax
 
     ; Retrieve all general purpose registers
     pop rax
@@ -61,7 +60,7 @@ isr_wrapper:
     pop rbp
 
     add rsp, 16 ; Skiping error code and interrupt number (each 8bytes)
-
+    sti ; enable interrupts again
     iretq
 
 %macro createExcHandler 1

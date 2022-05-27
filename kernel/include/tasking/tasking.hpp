@@ -31,6 +31,9 @@ enum THREAD_PRIVILEGE
 };
 
 struct k_thread_state {
+    register_t gs;
+    register_t fs;
+
     register_t rax;
     register_t rbx;
     register_t rcx;
@@ -50,9 +53,6 @@ struct k_thread_state {
 
     register_t rbp;
 
-    register_t gs;
-    register_t fs;
-
     uint64_t interruptCode;
     uint64_t errorCode;
 
@@ -60,7 +60,7 @@ struct k_thread_state {
     register_t cs;
     register_t rflags;
     register_t rsp;
-    register_t ds;
+    register_t ss;
 }__attribute__((packed));
 
 struct k_thread
@@ -69,6 +69,8 @@ struct k_thread
      * @brief The process that this thread belongs to
      */
     k_process *process;
+
+    uint64_t id;
 
     // The thread's status
     THREAD_STATUS status;
@@ -85,6 +87,17 @@ struct k_thread
         // Where it ends
         virtual_address_t end;
     } stack;
+
+    /**
+     * @brief Stack in the kernel-space for interrupts
+     */
+    struct
+    {
+        // Where it starts
+        virtual_address_t start;
+        // Where it ends
+        virtual_address_t end;
+    } interruptStack;
 
     /**
      * @brief The state of the thread.
@@ -117,7 +130,7 @@ struct k_process
     physical_address_t addressSpace;
 
     // This is the current thread of the process
-    k_thread *currentThread;
+    k_thread *mainThread;
     // The list of the process' threads
     k_thread_entry *threads;
 
@@ -159,7 +172,7 @@ struct k_processor_tasking
      * 
      * @return uint64_t The PID
      */
-    uint64_t getNextPID();
+    uint64_t getNextID();
 
     private:
         /**

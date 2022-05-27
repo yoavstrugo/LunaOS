@@ -1,11 +1,12 @@
 #pragma once
 
-extern void (*exceptionHandlers[32])();
+#include <stdint.h>
 
-
-void exceptionDoubleFault();
-void exceptionGPFault();
-void exceptionPageFault();
+extern void (*exceptionHandlers[32])(uint64_t);
+ 
+void exceptionDoubleFault(uint64_t code);
+void exceptionGPFault(uint64_t code);
+void exceptionPageFault(uint64_t code);
 
 
 extern "C" void  _iExc0();

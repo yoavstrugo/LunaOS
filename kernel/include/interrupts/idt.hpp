@@ -34,7 +34,7 @@ struct k_idt_entry
  * @param ist               Offset to the Interrupt Stack Table
  * @param flags             Flags.
  */
-void idtCreateEntry(uint8_t idx, uint64_t offset, void (*handler)(), uint16_t segmentSelector, uint8_t ist, uint8_t flags);
+void idtCreateEntry(uint8_t idx, uint64_t offset, void (*handler)(uint64_t), uint16_t segmentSelector, uint8_t ist, uint8_t flags);
 
 /**
  * @brief Create the IDT descriptor

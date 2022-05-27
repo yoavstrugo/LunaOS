@@ -1,9 +1,11 @@
 #pragma once
 
-extern void (*requestHandlers[224])();
+#include <stdint.h>
 
-void requestTimer();
-void requestKeyboardInt();
+extern void (*requestHandlers[224])(uint64_t);
+
+void requestTimer(uint64_t);
+void requestKeyboardInt(uint64_t);
 
 extern "C" void  _iReq32();
 extern "C" void  _iReq33();

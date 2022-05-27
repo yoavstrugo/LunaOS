@@ -65,6 +65,8 @@ k_thread *schedulerSchedule()
                 if (runningJob->thread->privilege == USER)
                     // Now add it to one lower priority
                     schedulerAddJob(runningJob, runningJob->priority + 1);
+                else 
+                    schedulerAddJob(runningJob, runningJob->priority);
 
                 // Reset it's time
                 runningJob->timeInPriority = 0;
@@ -82,14 +84,18 @@ k_thread *schedulerSchedule()
             // Get the next ready to run job
             while (job && job->thread->status != READY)
             {
-                // Move it to the queue's end
+                // Remove the job since it's not ready to be executed
                 schedulerRemoveJob(runningJob);
-                schedulerAddJob(runningJob, priority);
+
+                // If the job isn't dead move it to the queue's end
+                if (job->thread->status != DEAD)
+                    schedulerAddJob(runningJob, priority);
             }
 
             logDebugn("\t- Selected job to run");
             logDebugn("\t\t* Priority %d", priority);
             logDebugn("\t\t* Parent PID %d", job->thread->process->pid);
+            logDebugn("\t\t* Thread ID %d", job->thread->id);
 
             // Round-robin on the highest priority queue
             // Therefore the current job to run is the first job

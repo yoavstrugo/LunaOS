@@ -5,15 +5,20 @@
 
 #include <tasking/scheduler.hpp>
 #include <memory/heap.hpp>
+#include <interrupts/interrupts.hpp>
+
+#include <gdt/gdt.hpp>
 
 static k_processor_tasking *processorTaskingArray;
 
-uint64_t k_processor_tasking::getNextPID()
+uint64_t k_processor_tasking::getNextID()
 {
     return this->nextPID++;
 }
 
-void _idleThread() {
+void _idleThread()
+{
+    interruptsEnable();
     for (;;)
         asm("hlt");
 }
@@ -26,8 +31,8 @@ void taskingInitialize(uint8_t numOfCPUs)
 
     // Start with idle thread
     k_process *proc = taskingCreateProcess();
-    k_thread *thread = taskingCreateThread((uint64_t)_idleThread, proc);
-    
+    k_thread *thread = taskingCreateThread((uint64_t)_idleThread, proc, KERNEL);
+
     taskingGetProcessor()->currentThread = thread;
 }
 
@@ -49,7 +54,7 @@ k_process *taskingCreateProcess()
     process->processAllocator->allocateUserspaceHeap();
     process->addressSpace = process->processAllocator->getSpace();
 
-    process->pid = processorTaskingArray[0].getNextPID();
+    process->pid = processorTaskingArray[0].getNextID();
 
     k_process_entry *entry = new k_process_entry();
     entry->process = process;
@@ -59,33 +64,64 @@ k_process *taskingCreateProcess()
     return process;
 }
 
-k_thread *taskingCreateThread(virtual_address_t entryPoint, k_process *process, THREAD_PRIVILEGE privilege)
+void taskingInitalizeThreadMemory(k_thread *thread, THREAD_PRIVILEGE privilege)
 {
-    k_thread *thread = new k_thread();
-    thread->process = process;
+    if (privilege == KERNEL)
+    {
+        thread->stack.start = thread->process->processAllocator->allocateStack(USERSPACE_STACK_SIZE, true);
+        thread->stack.end = thread->stack.start + USERSPACE_STACK_SIZE;
+        thread->interruptStack.start = 0;
+        thread->interruptStack.end = 0;
+    }
+    else
+    {
+        thread->stack.start = thread->process->processAllocator->allocateStack(USERSPACE_STACK_SIZE, false);
+        thread->stack.end = thread->stack.start + USERSPACE_STACK_SIZE;
+        thread->interruptStack.start = thread->process->processAllocator->allocateInterruptStack(INTERRUPT_STACK_SIZE);
+        thread->interruptStack.end = thread->interruptStack.start + USERSPACE_STACK_SIZE;
+    }
 
-    thread->stack.start = process->processAllocator->allocateStack(USERSPACE_STACK_SIZE);
-    thread->stack.end = thread->stack.start + USERSPACE_STACK_SIZE;
-    // Stack always start at the topmost address and goes down
-    thread->context->rbp = thread->stack.end;
     // The context of the thread is on the top of the stack (stack is going downwards - end is the top)
     thread->context = (k_thread_state *)(thread->stack.end - sizeof(k_thread_state));
+    // Stack always start at the topmost address and goes down
+    thread->context->rbp = thread->stack.end;
     // Set the stack pointer of the thread
     thread->context->rsp = (register_t)thread->context;
+}
 
+void taskingAddThreadToProcess(k_thread *thread, k_process *process)
+{
     // Add it to the process' list
     k_thread_entry *entry = new k_thread_entry();
     entry->thread = thread;
     entry->next = process->threads;
     process->threads = entry;
 
-    thread->privilege = privilege;
+    // Assign to the process and an select an id id
+    if (process->mainThread == NULL)
+    {
+        process->mainThread = thread;
+        thread->id = process->pid;
+    } else {
+        thread->id = taskingGetProcessor()->getNextID();
+    }
+}
 
+k_thread *taskingCreateThread(virtual_address_t entryPoint, k_process *process, THREAD_PRIVILEGE privilege)
+{
+    k_thread *thread = new k_thread();
+    thread->process = process;
+
+    taskingInitalizeThreadMemory(thread, privilege);
     // Set the IP for the thread
     thread->context->rip = entryPoint;
 
-    // Set segments
+    // Set segments according to privileges
+    thread->privilege = privilege;
     taskingSetupPrivileges(thread);
+
+    // Add the thread to it's parent process and assign an id to it
+    taskingAddThreadToProcess(thread, process);
 
     thread->status = READY;
     schedulerNewJob(thread);
@@ -94,23 +130,26 @@ k_thread *taskingCreateThread(virtual_address_t entryPoint, k_process *process, 
 
 void taskingSwitch()
 {
+    k_thread *previousThread = taskingGetRunningThread();
     k_thread *threadToRun = schedulerSchedule();
-    taskingGetProcessor()->currentThread = threadToRun;
 
-    if (threadToRun == NULL)
+    if (threadToRun != NULL)
     {
-        // TODO: idle thread
-        return;
+
+        if (threadToRun->process->addressSpace != pagingGetCurrentSpace())
+            pagingSwitchSpace(threadToRun->process->addressSpace);
+
+        if (threadToRun->privilege != KERNEL)
+            gdtSetActiveStack(threadToRun->interruptStack.end);
+
+        taskingGetProcessor()->currentThread = threadToRun;
+        threadToRun->status = RUNNING;
+
+        // The previouse thread should be ready to execute again
+        if (previousThread != NULL)
+            if (previousThread->status == RUNNING)
+                previousThread->status = READY;
     }
-
-    if (threadToRun->process->addressSpace != pagingGetCurrentSpace())
-    {
-        pagingSwitchSpace(threadToRun->process->addressSpace);
-    }
-
-    // Switch context
-
-    threadToRun->status = RUNNING;
 }
 
 void taskingDumpProcesses()
@@ -136,17 +175,21 @@ k_processor_tasking *taskingGetProcessor()
     return &processorTaskingArray[0];
 }
 
-void taskingSetupPrivileges(k_thread *thread) {
-    if (thread->privilege == KERNEL) {
-        thread->context->cs = 0x10 | 0;
-        thread->context->ds = 0x08 | 0;
-        thread->context->gs = 0x08 | 0;
-        thread->context->fs = 0x08 | 0;
+void taskingSetupPrivileges(k_thread *thread)
+{
+    if (thread->privilege == KERNEL)
+    {
+        thread->context->cs = 0x08 | 0;
+        thread->context->ss = 0x10 | 0;
+        thread->context->gs = 0x10 | 0;
+        thread->context->fs = 0x10 | 0;
         thread->context->rflags |= 0x3000;
-    } else if (thread->privilege == USER) {
-        thread->context->cs = 0x20 | 3;
-        thread->context->ds = 0x18 | 3;
-        thread->context->gs = 0x18 | 3;
-        thread->context->fs = 0x18 | 3;
+    }
+    else if (thread->privilege == USER)
+    {
+        thread->context->cs = 0x18 | 3;
+        thread->context->ss = 0x20 | 3;
+        thread->context->gs = 0x20 | 3;
+        thread->context->fs = 0x20 | 3;
     }
 }

@@ -8,7 +8,7 @@
 k_idt_descriptor idtDescriptor;
 k_idt_entry idt[K_IDT_SIZE];
 
-void idtCreateEntry(uint8_t idx, uint64_t offset, void (*handler)(), uint16_t segmentSelector, uint8_t ist, uint8_t flags)
+void idtCreateEntry(uint8_t idx, uint64_t offset, void (*handler)(uint64_t), uint16_t segmentSelector, uint8_t ist, uint8_t flags)
 {
     idt[idx].offsetLow = (uint16_t)(offset & 0xFFFF);
     idt[idx].segmentSelector = segmentSelector;

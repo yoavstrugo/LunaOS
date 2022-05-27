@@ -7,6 +7,7 @@
 #include <kernel.hpp>
 #include <memory/paging.hpp>
 #include <system/pit.hpp>
+#include <interrupts/interrupts.hpp>
 
 virtual_address_t lapicGlobalAddress = NULL;
 bool isPrepared = false;
@@ -59,6 +60,7 @@ uint32_t lapicRead(uint32_t reg)
 
 void lapicStartTimer()
 {
+    interruptsDisable();
     // Tell APIC timer to use divider 16
     lapicWrite(APIC_REGISTER_TIMER_DIV, 0x3);
 
@@ -82,9 +84,10 @@ void lapicStartTimer()
     // Start timer as periodic on IRQ 0, divider 16, with the number of ticks we counted
     lapicWrite(APIC_REGISTER_LVT_TIMER, 32 | APIC_LVT_TIMER_MODE_PERIODIC);
     lapicWrite(APIC_REGISTER_TIMER_DIV, 0x3);
-    lapicWrite(APIC_REGISTER_TIMER_INITCNT, ticksIn10ms / 10);
+    lapicWrite(APIC_REGISTER_TIMER_INITCNT, ticksIn10ms / 10 * APIC_TIMER_TIMESLOT_MS);
 
     logDebugn("%! APIC Timer has started with freqency 1khz (tick every 1ms)", "[LAPIC]");
+    interruptsEnable();
 }
 
 void lapicSendEOI()
