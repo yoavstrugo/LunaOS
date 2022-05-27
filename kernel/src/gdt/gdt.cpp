@@ -18,16 +18,18 @@ void gdtCreateEntry(uint8_t idx, uint32_t base, uint32_t limit, uint8_t accessBy
     gdt.entries[idx].baseHigh = (uint8_t)((base >> 24) & 0xFF);                        // last 8 bits of base
 }
 
-void gdtCreateTSSEntry() {
+void gdtCreateTSSEntry()
+{
     uint64_t base = ((uint64_t)&tss);
 
-    gdt.tss.limitLow = (uint16_t)(sizeof(k_tss) & 0xFFFF);
-    gdt.tss.limitHighFlags = (uint8_t)(((sizeof(k_tss) >> 16) & 0xF));
-    gdt.tss.accessByte = 0x89;
-    gdt.tss.baseLow = (uint16_t)(base & 0xFFFF);
-    gdt.tss.baseMid0 = (uint16_t)((base >> 16) & 0xFF);
-    gdt.tss.baseMid1 = (uint8_t)((base >> 24) & 0xFF);
-    gdt.tss.baseHigh = (uint32_t)(base >> 32);
+    gdt.tss.limitLow        = (uint16_t) (sizeof(k_tss)) - 1;
+    gdt.tss.baseLow         = (uint16_t) (base & 0xFFFF);
+    gdt.tss.baseMid0        = (uint16_t) ((base >> 16) & 0xFF);
+    gdt.tss.accessByte      = (uint8_t)  0x89; // Present - 0x80, type - 0x9
+    gdt.tss.limitHighFlags  = (uint8_t)  0;
+    gdt.tss.baseMid1        = (uint8_t)  ((base >> 24) & 0xFF);
+    gdt.tss.baseHigh        = (uint32_t) (base >> 32);
+    gdt.tss.reserved        = 0;
 }
 
 void gdtInitialize()
@@ -41,11 +43,8 @@ void gdtInitialize()
 
     // TSS
     gdtCreateTSSEntry();
-    tss.ist1 = 0x8;
-    virtual_address_t stackPtr = kernelGetStack();
-    tss.rsp0Low = (uint32_t)(stackPtr && 0xffffffff);
-    tss.rsp0High = (uint32_t)(stackPtr >> 32);
-
+    memset((char *)&tss, 0, sizeof(tss));
+    
     // Set the descriptor
     gdtDescriptor.size = sizeof(gdt) - 1;
     gdtDescriptor.offset = (uint64_t)&gdt;
@@ -56,6 +55,12 @@ void gdtInitialize()
 
     _loadGDT(&gdtDescriptor);
     logDebugn("%! has been loaded into GDT register.", "[GDT]");
-    // _flushTSS();
-    // logDebugn("%! flushed TSS.", "[GDT]");
+    _loadTSS(0x28);
+    logDebugn("%! loaded TSS.", "[GDT]");
+}
+
+
+void gdtSetActiveStack(virtual_address_t stackPtr) {
+    tss.ist[0] = stackPtr;
+    tss.rsp[0] = stackPtr;
 }

@@ -21,8 +21,8 @@ _loadGDT:
     push rdi
     retfq
 
-global _flushTSS
-_flushTSS:
-	mov ax, (5 * 8) | 0 ; fifth 8-byte selector, symbolically OR-ed with 0 to set the RPL (requested privilege level).
+global _loadTSS
+_loadTSS:
+    mov ax, di
 	ltr ax
 	ret

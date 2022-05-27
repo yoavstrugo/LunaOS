@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <types.hpp>
 
-#define K_GDT_SIZE 6
+#define K_GDT_SIZE 5
 #define K_TSS_LOCATION  0xFFFF800150200000
 
 /**
@@ -43,21 +43,17 @@ struct k_gdt_tss_entry {
 
 struct k_tss {
     uint32_t reserved0;
-    uint32_t rsp0Low;
-    uint32_t rsp0High;
-    uint64_t rsp1;
-    uint64_t rsp2;
+
+    uint64_t rsp[3];
+
     uint64_t reserved1;
-    uint64_t ist1;
-    uint64_t ist2;
-    uint64_t ist3;
-    uint64_t ist4;
-    uint64_t ist5;
-    uint64_t ist6;
-    uint64_t ist7;
+
+    uint64_t ist[7];
+
     uint64_t reserved2;
     uint16_t reserved3;
-    uint16_t ioMapBaseAddress;
+
+    uint16_t iopbOffset;
 }__attribute__((packed));
 
 struct k_gdt {
@@ -89,8 +85,15 @@ void gdtCreateTSSEntry();
 void gdtInitialize();
 
 /**
+ * @brief Sets the active "privileged" stack
+ * 
+ * @param stackPtr The pointer to the stack (stack end)
+ */
+void gdtSetActiveStack(virtual_address_t stackPtr);
+
+/**
  * @brief Loads the GDT into the lgdt register, defined with assembly
  *
  */
 extern "C" void _loadGDT(k_gdt_descriptor *gdtDescriptorAddress);
-extern "C" void _flushTSS();
+extern "C" void _loadTSS(uint16_t tssIndex);
