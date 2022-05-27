@@ -2,6 +2,7 @@
 
 #include <logger/logger.hpp>
 #include <system/acpi/rsdp.hpp>
+#include <system/acpi/madt.hpp>
 #include <memory/memory.hpp>
 #include <stddef.h>
 #include <kernel.hpp>
@@ -38,6 +39,16 @@ void acpiInitialize(stivale2_struct *bootInfo)
     }
 
     logDebugn("%! Initialization completed!", "[ACPI]");
+
+    k_acpi_sdt_hdr *madtHeader = acpiGetEntryWithSignature("APIC");
+    if (!madtHeader)
+    {
+        logWarnn("%! Couldn't find MADT", "[MADT]");
+    }
+    else
+    {
+        madtParse(madtHeader);
+    }
 }
 
 uint32_t acpiGetUnmappedSDTLength(physical_address_t sdtAddr)
