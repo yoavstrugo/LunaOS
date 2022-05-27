@@ -75,7 +75,7 @@ void BitmapAllocator::initialize(stivale2_struct_tag_memmap *memmapStruct)
     // TODO: Do something in case there's no place for the bitmap
 
     // Calculate the address
-    physical_address_t bitmapAddress = bitmapPage * PAGE_SIZE;
+    virtual_address_t bitmapAddress = PAGING_APPLY_DIRECTMAP(bitmapPage * PAGE_SIZE);
     memset((char *)bitmapAddress, 0, bitmapSize);
 
     // Copy the temp array to the location
@@ -85,8 +85,8 @@ void BitmapAllocator::initialize(stivale2_struct_tag_memmap *memmapStruct)
     this->_memoryBitmap.setBuffer((uint8_t *)bitmapAddress, bitmapSize);
 
     // TODO: Lock the pages of the bitmap
-    for (uint64_t i = 0; i < bitmapSize / PAGE_SIZE + 1; i++)
-        this->_lockBlock(bitmapAddress + i * PAGE_SIZE);
+    for (uint64_t i = 0; i < PAGING_ALIGN_PAGE_UP(bitmapSize) / PAGE_SIZE + 1; i++)
+        this->_lockBlock(PAGING_REMOVE_DIRECTMAP(bitmapAddress) + i * PAGE_SIZE);
 }
 
 void BitmapAllocator::freePage(physical_address_t blockAddr)
