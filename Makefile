@@ -20,7 +20,10 @@ ISOROOT = isoroot
 
 HOST_SHARE = Sharing
 
-QEMU_FLAGS = -m 1536M -cpu qemu64 -smp 2 -net none
+QEMU_CORES 	= 1
+QEMU_MEM	= 1.5G
+QEMU_CPU	= qemu64
+QEMU_FLAGS 	= -m ${QEMU_MEM} -cpu ${QEMU_CPU} -smp ${QEMU_CORES} -net none
 
 .PHONY: buildimg
 buildimg: 
