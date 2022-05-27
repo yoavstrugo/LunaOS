@@ -58,7 +58,7 @@ static struct stivale2_header_tag_framebuffer framebuffer_hdr_tag = {
     .unused = 0};
 
 static stivale2_header_tag_smp smp_hdr_tag{
-    .tag{
+    .tag = {
         .identifier = STIVALE2_HEADER_TAG_SMP_ID,
         .next = (uint64_t)&framebuffer_hdr_tag},
     .flags = 1UL};
@@ -104,6 +104,10 @@ void threadProgram() {
     logInfon("%! THREAD IS RUNNING!", "[THREAD]");
 }
 
+void userthreadMain() {
+    while(true);
+}
+
 void kernelInitialize(stivale2_struct *stivaleInfo)
 {
     loggerInitialize(stivaleInfo);
@@ -113,25 +117,11 @@ void kernelInitialize(stivale2_struct *stivaleInfo)
 
     gdtInitialize();
 
-    interruptsInitialize();
-    picRemapIRQs();
-    // picUnsetMask(1);
-
     memoryInitialize(stivaleInfo);
-    heapAllocate(1025);
-    heapAllocate(511);
-    heapAllocate(1024 * 1024 + 1000);
 
     acpiInitialize(stivaleInfo);
-    k_acpi_sdt_hdr *madtHeader = acpiGetEntryWithSignature("APIC");
-    if (!madtHeader)
-    {
-        logWarnn("%! Couldn't find MADT", "[MADT]");
-    }
-    else
-    {
-        madtParse(madtHeader);
-    }
+    
+    interruptsInitialize();
 
     schedulerInit();
     
@@ -139,11 +129,11 @@ void kernelInitialize(stivale2_struct *stivaleInfo)
     taskingAddCPU(0);
 
     k_process *proc = taskingCreateProcess();
-    taskingCreateThread((virtual_address_t)threadProgram, proc, KERNEL);
+    taskingCreateProcess();
+    taskingCreateThread((virtual_address_t)threadProgram, proc, KERNEL);       
 
-    lapicInitialize();
 
-    ioapicCreateISARedirection(1, 1, 0);
+
     lapicStartTimer();
 }
 
