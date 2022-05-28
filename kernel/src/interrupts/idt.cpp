@@ -33,9 +33,9 @@ void idtInitialize()
 
 void idtLoad()
 {
-    logDebugn("%! is at 0x%64x", "IDT", &idt);
-    logDebugn("%! is at 0x%64x, \n\t\tsize: %d, \n\t\toffset: 0x%64x", "IDT descriptor",
+    logDebugn("%! is at 0x%64x", "[IDT]", &idt);
+    logDebugn("%! is at 0x%64x, \n\t\tsize: %d, \n\t\toffset: 0x%64x", "[IDT]",
               &idtDescriptor, idtDescriptor.size, idtDescriptor.offset);
     _loadIDT(&idtDescriptor);
-    logDebugn("%! has been loaded into lidt", "IDT");
+    logDebugn("%! has been loaded into lidt", "[IDT]");
 }

@@ -17,12 +17,12 @@ void interruptsInitialize()
     idtInitialize();
     idtLoad();
     interruptsInstallRoutines();
-    interruptsEnable();
 
     picRemapIRQs();
 
     ioapicCreateISARedirection(1, 1, 0);
     lapicInitialize();
+    interruptsEnable();
 }
 
 void interruptsEnable()
