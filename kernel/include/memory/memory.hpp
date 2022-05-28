@@ -11,13 +11,13 @@
 #define K_CONST_KERNEL_VIRTUAL_RANGES_START 0xFFFF800150100000
 #define K_CONST_KERNEL_VIRTUAL_RANGES_END 0xFFFF8100A0100000
 
-#define BYTE (1)
-#define KiB (1024 * BYTE)
-#define MiB (1024 * KiB)
-#define GiB (1024 * MiB)
+#define BYTE_unit (1)
+#define KiB_unit (1024 * BYTE_unit)
+#define MiB_unit (1024 * KiB_unit)
+#define GiB_unit (1024 * MiB_unit)
 
-#define K_MEMORY_UNIT(mem) ((mem >= GiB) ? "GiB" : ((mem >= MiB) ? "MiB" : ((mem >= KiB) ? "KiB" : "Bytes")))
-#define K_MEMORY_SIZE(mem) ((mem >= GiB) ? mem / GiB : ((mem >= MiB) ? mem / MiB : ((mem >= KiB) ? mem / KiB : mem)))
+#define K_MEMORY_UNIT(mem) ((mem >= GiB_unit) ? "GiB" : ((mem >= MiB_unit) ? "MiB" : ((mem >= KiB_unit) ? "KiB" : "Bytes")))
+#define K_MEMORY_SIZE(mem) ((mem >= GiB_unit) ? mem / GiB_unit : ((mem >= MiB_unit) ? mem / MiB_unit : ((mem >= KiB_unit) ? mem / KiB_unit : mem)))
 
 extern BitmapAllocator memoryPhysicalAllocator;
 extern k_virtual_address_range_allocator virtualAddressRangeAllocator;
