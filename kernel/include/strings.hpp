@@ -5,7 +5,15 @@
 
 int strcmp(const char *X, const char *Y);
 int strncmp(const char *s1, const char *s2, size_t n);
+
+char *strchr(const char *p, int ch);
+
+int memcmp(const void *str1, const void *str2, size_t count);
+
 void memcpy(void *dstpp, void *srcpp, size_t len);
+void memcpy(void *dstpp, const void *srcpp, size_t len);
+
+void memset(unsigned char *addr, char value, size_t len);
 void memset(char *addr, char value, size_t len);
 
 const char *toString(uint8_t num);
