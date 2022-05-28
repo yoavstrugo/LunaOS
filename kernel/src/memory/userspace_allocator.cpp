@@ -19,7 +19,9 @@ k_userspace_allocator::k_userspace_allocator()
 
     // Copy the kernel mappings
     pagingCopyKernelMappings(this->pml4Physical);
+    #ifdef VERBOSE_USERSPACEALLOCATOR
     logDebugn("%! Mapped kernel to process' space.", "[Userspace Allocator]");
+    #endif
 }
 
 physical_address_t k_userspace_allocator::getSpace()
@@ -42,7 +44,9 @@ void k_userspace_allocator::allocateUserspaceCode(uint64_t userspaceCodeSize)
         // Map the page
         pagingMapPageInSpace(virt, phys, this->pml4Physical, USERSPACE_DEFAULT_PAGING_FLAGS);
     }
+    #ifdef VERBOSE_USERSPACEALLOCATOR
     logDebugn("%! Mapped code area from 0x%64x with size %m.", "[Userspace Allocator]", this->userspaceCodeStart, userspaceCodeSize);
+    #endif
 }
 
 void k_userspace_allocator::allocateUserspaceHeap()
@@ -59,7 +63,9 @@ void k_userspace_allocator::allocateUserspaceHeap()
         pagingMapPageInSpace(virt, phys, this->pml4Physical, USERSPACE_DEFAULT_PAGING_FLAGS);
     }
 
+    #ifdef VERBOSE_USERSPACEALLOCATOR
     logDebugn("%! Allocated heap at 0x%64x-0x%64x.", "[Userspace Allocator]", heapStart, heapEnd);
+    #endif
 }
 
 void k_userspace_allocator::expandUserspaceHeap()
@@ -81,20 +87,28 @@ void k_userspace_allocator::expandUserspaceHeap()
         pagingMapPageInSpace(virt, phys, this->pml4Physical, USERSPACE_DEFAULT_PAGING_FLAGS);
     }
 
+    #ifdef VERBOSE_USERSPACEALLOCATOR
     logDebugn("%! Heap expanded now at starts at 0x%64x (instead of 0x%64x)", "[Userspace Allocator]", this->userspaceHeapStart, oldStart);
+    #endif
 }
 
 void k_userspace_allocator::free()
 {
 
+    #ifdef VERBOSE_USERSPACEALLOCATOR
     logDebugn("%! Freeing process' memory", "[Userspace Allocator]");
+    #endif
+
     // Free userspace code
     for (uint64_t virt = this->getUserspaceCodeStart(); virt < this->getUserspaceCodeEnd(); virt += PAGE_SIZE)
     {
         physical_address_t phys = pagingUnmapPageInSpace(virt, this->pml4Physical);
         memoryPhysicalAllocator.freePage(phys);
     }
+
+    #ifdef VERBOSE_USERSPACEALLOCATOR
     logDebugn("\t- Code has been freed");
+    #endif
 
     // Free userspace heap
     for (uint64_t virt = this->getUserspaceHeapStart(); virt < this->getUserspaceHeapEnd(); virt += PAGE_SIZE)
@@ -102,7 +116,10 @@ void k_userspace_allocator::free()
         physical_address_t phys = pagingUnmapPageInSpace(virt, this->pml4Physical);
         memoryPhysicalAllocator.freePage(phys);
     }
+
+    #ifdef VERBOSE_USERSPACEALLOCATOR
     logDebugn("\t- Heap has been freed");
+    #endif
 
     // Free userspace stacks
     k_address_range_header *range = this->threadsStackAllocator->getRanges();
@@ -122,7 +139,10 @@ void k_userspace_allocator::free()
         }
         range = range->next;
     }
+
+    #ifdef VERBOSE_USERSPACEALLOCATOR
     logDebugn("\t- Userspace stacks has been freed");
+    #endif
 
     // Free kernelspace stacks and interrupt stacks
     range = this->kernelspaceRanges;
@@ -142,7 +162,10 @@ void k_userspace_allocator::free()
         }
         range = range->next;
     }
+
+    #ifdef VERBOSE_USERSPACEALLOCATOR
     logDebugn("\t- Kernelspace stacks and interrupt stacks has been freed");
+    #endif
 }
 
 virtual_address_t k_userspace_allocator::allocateStack(uint64_t stackSize, bool kernelStack)
@@ -181,7 +204,9 @@ virtual_address_t k_userspace_allocator::allocateStack(uint64_t stackSize, bool 
         pagingMapPageInSpace(stackPtr + PAGE_SIZE * page, phys, this->pml4Physical, flags);
     }
 
+    #ifdef VERBOSE_USERSPACEALLOCATOR
     logDebugn("%! Allocated stack starting at 0x%64x with size %m", "[Userspace Allocator]", stackPtr, PAGING_ALIGN_PAGE_UP(stackSize));
+    #endif
 
     return stackPtr;
 }
@@ -213,7 +238,9 @@ virtual_address_t k_userspace_allocator::allocateInterruptStack(uint64_t stackSi
         pagingMapPageInSpace(stackPtr + PAGE_SIZE * page, phys, this->pml4Physical, PAGING_DEFAULT_FLAGS);
     }
 
+    #ifdef VERBOSE_USERSPACEALLOCATOR
     logDebugn("%! Allocated interrupt stack starting at 0x%64x with size %m", "[Userspace Allocator]", stackPtr, PAGING_ALIGN_PAGE_UP(stackSize));
+    #endif
 
     return stackPtr;
 }

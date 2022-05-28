@@ -50,7 +50,10 @@ void k_virtual_address_range_allocator::addRange(virtual_address_t start, virtua
         }
     }
 
+    #ifdef VERBOSE_VADDRALLOCATOR
     logDebugn("%! Added range 0x%64x-0x%64x (%d pages)", "[VAddr Allocator]", start, end, addressHeader->pages);
+    #endif
+
     this->mergeAll();
 }
 
@@ -88,7 +91,10 @@ virtual_address_t k_virtual_address_range_allocator::allocateRange(uint64_t page
 
     range->pages = pages;
 
+    #ifdef VERBOSE_VADDRALLOCATOR
     logDebugn("%! Allocated %d pages, from base 0x%64x.", "[VAddr Allocator]", pages, range->base);
+    #endif
+
     return range->base;
 }
 
@@ -108,10 +114,12 @@ void k_virtual_address_range_allocator::mergeAll()
             k_address_range_header *followingRange = range->next;
             range->next = followingRange->next;
 
+        #ifdef VERBOSE_VADDRALLOCATOR
             logDebugn("%! Successfully merged ranges from %d pages to %d pages.",
                       "[VAddr Allocator]",
                       range->pages - followingRange->pages,
                       range->pages);
+        #endif
 
             // no longer need to next range header
             delete followingRange;
@@ -144,7 +152,9 @@ void k_virtual_address_range_allocator::freeRange(virtual_address_t base)
     }
 
     range->used = false;
+    #ifdef VERBOSE_VADDRALLOCATOR
     logDebugn("%! Successfully freed range of size %d pages, base 0x%64x", "[VAddr Allocator]", range->pages, range->base);
+    #endif
     this->mergeAll();
 }
 

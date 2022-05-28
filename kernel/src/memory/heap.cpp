@@ -12,7 +12,7 @@ bool heapInitialized = false;
 k_freelist_allocator heapAllocator;
 uint64_t heapUsed;
 
-bool heapVerbose = true;
+bool heapVerbose = false;
 
 void heapInitialize(virtual_address_t start, virtual_address_t end)
 {
@@ -31,11 +31,12 @@ void heapInitialize(virtual_address_t start, virtual_address_t end)
         pagingMapPage(start + PAGE_SIZE * page, pAddr);
     }
 
-    if (heapVerbose)
+    #ifdef VERBOSE_HEAP
         logDebugn("%! Heap has been initialized. \
                 \n\t- Starting at: 0x%64x, \
                 \n\t- Ending At: 0x%64x",
                   "[Kernel Heap]", start, end);
+    #endif
 }
 
 void *heapAllocate(uint64_t size)
@@ -58,8 +59,9 @@ void *heapAllocate(uint64_t size)
         return 0;
     }
 
-    if (heapVerbose)
+    #ifdef VERBOSE_HEAP
         logDebugn("%! Successfully allocated %d %s.", "[Kernel Heap]", K_MEMORY_SIZE(size), K_MEMORY_UNIT(size));
+    #endif
     heapUsed += size;
     return ptr;
 }
@@ -90,7 +92,7 @@ bool heapExpand()
     heapAllocator.expand(K_HEAP_EXPANSION_STEP);
     heapEnd += K_HEAP_EXPANSION_STEP;
 
-    if (heapVerbose)
+    #ifdef VERBOSE_HEAP
         logDebugn("%! Heap has expanded by %d %s, up to 0x%64x (%d %s in use)",
                   "[Kernel Heap]",
                   K_MEMORY_SIZE(K_HEAP_EXPANSION_STEP),
@@ -98,6 +100,7 @@ bool heapExpand()
                   heapEnd,
                   K_MEMORY_SIZE(heapUsed),
                   K_MEMORY_UNIT(heapUsed));
+    #endif
     return true;
 }
 
