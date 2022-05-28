@@ -2,6 +2,9 @@
 
 #include <stivale2.h>
 #include <memory/paging.hpp>
+#include <storage/ahci/ahci.hpp>
+
+extern k_ahci_driver *mainDriver;
 
 /**
  * @brief The entry point of our kernel
@@ -15,5 +18,3 @@ void kernelInitialize(stivale2_struct *stivaleInfo);
 void kernelPanic(const char *msg, ...);
 
 void kernelHalt();
-
-virtual_address_t kernelGetStack();

@@ -31,6 +31,11 @@
 
 #include <syscalls/syscalls_tasking.hpp>
 
+#include <fatfs/ff.h>
+
+#include <storage/ahci/ahci.hpp>
+#include <system/pci/pci.hpp>
+
 // We need to tell the stivale bootloader where we want our stack to be.
 // We are going to allocate our stack as an array in .bss.
 static uint8_t stack[0x100000];
@@ -100,13 +105,18 @@ extern "C" void kernelMain(stivale2_struct *stivale2Struct)
     // kernelHalt();
 }
 
-void threadProgram() {
+void threadProgram()
+{
     logInfon("%! THREAD IS RUNNING!", "[THREAD]");
 }
 
-void userthreadMain() {
-    while(true);
+void userthreadMain()
+{
+    while (true)
+        ;
 }
+
+k_ahci_driver *mainDriver;
 
 void kernelInitialize(stivale2_struct *stivaleInfo)
 {
@@ -120,21 +130,28 @@ void kernelInitialize(stivale2_struct *stivaleInfo)
     memoryInitialize(stivaleInfo);
 
     acpiInitialize(stivaleInfo);
-    
+
     interruptsInitialize();
 
     schedulerInit();
-    
+
     taskingInitialize(1);
     taskingAddCPU(0);
 
-    k_process *proc = taskingCreateProcess();
-    taskingCreateProcess();
-    taskingCreateThread((virtual_address_t)threadProgram, proc, KERNEL);       
+    k_pci_device_hdr *ahciDevice = pciGetDevice(0x01, 0x06, 0x01);
+    mainDriver = new k_ahci_driver(ahciDevice);
+
+    FIL* fp;
+    FRESULT result = f_open(fp, "file.txt", FA_WRITE);
+    if (result != FR_OK)
+        logWarnn("Failed opening file, result: %d", result);
 
 
+    // k_process *proc = taskingCreateProcess();
+    // taskingCreateProcess();
+    // taskingCreateThread((virtual_address_t)threadProgram, proc, KERNEL);
 
-    lapicStartTimer();
+    // lapicStartTimer();
 }
 
 void kernelPanic(const char *msg, ...)
@@ -165,7 +182,8 @@ void kernelHalt()
     }
 }
 
-virtual_address_t kernelGetStack() {
+virtual_address_t kernelGetStack()
+{
     return NULL;
     // return (virtual_address_t)stack;
 }
