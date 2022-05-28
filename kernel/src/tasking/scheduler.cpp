@@ -8,6 +8,7 @@
 k_jobs_queue jobsQueues[K_CONST_SCHEDULER_QUEUES];
 k_scheduler_job *runningJob;
 uint64_t priorityBoostTime;
+static bool initialized = false;
 
 void schedulerInit()
 {
@@ -25,6 +26,9 @@ void schedulerInit()
 
 uint64_t schedulerGetTimeAllotment(uint8_t priority)
 {
+    if (!initialized)
+        return 0;
+
     return (priority * (K_CONST_MAXIMUM_TIMESLICE - K_CONST_MINIMUM_TIMESLICE) /
             K_CONST_SCHEDULER_QUEUES) +
            K_CONST_MINIMUM_TIMESLICE;
@@ -32,6 +36,9 @@ uint64_t schedulerGetTimeAllotment(uint8_t priority)
 
 void schedulerTime()
 {
+    if (!initialized)
+        return;
+
     if (runningJob != NULL)
         runningJob->timeInPriority += APIC_TIMER_TIMESLOT_MS;
     priorityBoostTime += APIC_TIMER_TIMESLOT_MS;
@@ -41,6 +48,9 @@ void schedulerTime()
 
 k_thread *schedulerSchedule()
 {
+    if (!initialized)
+        return NULL;
+
     if (runningJob == NULL ||
         runningJob->thread->status == WAITING ||
         runningJob->thread->status == DEAD ||
@@ -111,6 +121,9 @@ k_thread *schedulerSchedule()
 
 void schedulerPriorityBoost()
 {
+    if (!initialized)
+        return;
+
     for (job_priority_t priority = 0; priority < K_CONST_SCHEDULER_QUEUES - 1; priority++)
     {
         k_scheduler_job *job = jobsQueues[priority].head;
@@ -129,6 +142,9 @@ void schedulerPriorityBoost()
 
 void schedulerRemoveJob(k_scheduler_job *job)
 {
+    if (!initialized)
+        return;
+
     k_scheduler_job *prev = job->prev;
     k_scheduler_job *next = job->next;
     job_priority_t priority = job->priority;
@@ -149,6 +165,9 @@ void schedulerRemoveJob(k_scheduler_job *job)
 
 void schedulerAddJob(k_scheduler_job *job, job_priority_t priority)
 {
+    if (!initialized)
+        return;
+
     // Set it's priority
     job->priority = priority;
 
@@ -165,6 +184,9 @@ void schedulerAddJob(k_scheduler_job *job, job_priority_t priority)
 
 void schedulerNewJob(k_thread *thread)
 {
+    if (!initialized)
+        return;
+
     k_scheduler_job *job = new k_scheduler_job();
 
     job->thread = thread;
