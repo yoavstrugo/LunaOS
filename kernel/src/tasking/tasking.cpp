@@ -48,7 +48,7 @@ k_process *taskingCreateProcess()
     k_process *process = new k_process();
 
     // 2 MiB for code, should change to ELF size
-    uint64_t codeSize = 2 * MiB;
+    uint64_t codeSize = 2 * MiB_unit;
     process->processAllocator = new k_userspace_allocator();
     process->processAllocator->allocateUserspaceCode(codeSize);
     process->processAllocator->allocateUserspaceHeap();
