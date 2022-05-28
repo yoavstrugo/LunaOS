@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <kernel.hpp>
 #include <strings.hpp>
+#include <system/acpi/mcfg.hpp>
 
 k_acpi_sdt_hdr *xsdt = NULL;
 k_acpi_entry *acpiTables = NULL;
@@ -38,17 +39,31 @@ void acpiInitialize(stivale2_struct *bootInfo)
         acpiTables = entry;
     }
 
+    logDebugn("%! Tables:", "[ACPI]");
+    k_acpi_entry *curr = acpiTables;
+    while (curr) {
+        char name[5];
+        memcpy(name, curr->header->signature, 4);
+        name[4] = '\0';
+        logDebugn("\t- %s", name);
+        curr =curr->next;
+    }
+
     logDebugn("%! Initialization completed!", "[ACPI]");
 
+    // Parse MADT
     k_acpi_sdt_hdr *madtHeader = acpiGetEntryWithSignature("APIC");
     if (!madtHeader)
-    {
-        logWarnn("%! Couldn't find MADT", "[MADT]");
-    }
+        logWarnn("%! Couldn't find MADT", "[ACPI]");
     else
-    {
         madtParse(madtHeader);
-    }
+
+    // Parse MCFG
+    k_acpi_sdt_hdr *mcfgHeader = acpiGetEntryWithSignature("MCFG");
+    if (!mcfgHeader)
+        logWarnn("%! Couldn't find MCFG.", "[ACPI]");
+    else 
+        mcfgParse(mcfgHeader);
 }
 
 uint32_t acpiGetUnmappedSDTLength(physical_address_t sdtAddr)

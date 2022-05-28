@@ -3,17 +3,20 @@
 #include <logger/logger.hpp>
 #include <io.hpp>
 
+#define VERBOSE_PIT
+
+
 static uint32_t timerClocking;
 static uint32_t sleepDivisor;
 
 void pitPrepareSleep(uint32_t microseconds)
 {
 	// Sanity check
-	if (microseconds > 54 * 1000)
-	{
-		logWarnn("%! illegal use of sleep. may only sleep up to 54000 microseconds", "[PIT]");
-		microseconds = 0;
-	}
+	// if (microseconds > 54 * 1000)
+	// {
+	// 	logWarnn("%! illegal use of sleep. may only sleep up to 54000 microseconds", "[PIT]");
+	// 	microseconds = 0;
+	// }
 
 	// Disable the speaker
 	uint8_t speakerControlByte = ioInByte(0x61);
@@ -25,10 +28,17 @@ void pitPrepareSleep(uint32_t microseconds)
 
 	// Configure PIT, calculate divisor for the requested microseconds
 	sleepDivisor = PIT_FREQUENCY / (1000000 / microseconds);
+
+#ifdef VERBOSE_PIT
+	logDebugn("%! Prepared sleep of %d microseconds", "[PIT]", microseconds);
+#endif
 }
 
 void pitPerformSleep()
 {
+#ifdef VERBOSE_PIT
+	logDebugn("%! Started sleep.", "[PIT]");
+#endif
 
 	// Write the prepared sleep divisor
 	ioOutByte(0x42, sleepDivisor & 0xFF);
@@ -42,4 +52,8 @@ void pitPerformSleep()
 	// Wait for PIT counter to reach 0
 	while (!(ioInByte(0x61) & 0x20))
 		;
+
+#ifdef VERBOSE_PIT
+	logDebugn("%! Sleep ended.", "[PIT]");
+#endif
 }
