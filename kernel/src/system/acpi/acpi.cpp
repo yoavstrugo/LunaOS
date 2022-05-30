@@ -69,7 +69,7 @@ void acpiInitialize(stivale2_struct *bootInfo)
 uint32_t acpiGetUnmappedSDTLength(physical_address_t sdtAddr)
 {
     // map just a single page to read the length of the SDT header
-    virtual_address_t temporaryPage = virtualAddressRangeAllocator.allocateRange(1);
+    virtual_address_t temporaryPage = virtualAddressRangeAllocator.allocateRange(1, "acpi");
 
     if (!temporaryPage)
     {
@@ -112,7 +112,7 @@ k_acpi_sdt_hdr *acpiMapSDT(physical_address_t sdtPhysAddr)
     uint32_t rangePages = (rangeEnd - rangeStart) / PAGE_SIZE;
 
     // Allocate the pages on the virtual address ranges
-    virtual_address_t sdtVirtualAddr = virtualAddressRangeAllocator.allocateRange(rangePages);
+    virtual_address_t sdtVirtualAddr = virtualAddressRangeAllocator.allocateRange(rangePages,"acpi");
 
     if (!sdtVirtualAddr)
     {
