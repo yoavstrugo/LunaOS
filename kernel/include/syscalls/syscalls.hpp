@@ -1,13 +1,9 @@
 #pragma once
 
 #include <stdint.h>
+#include <../../lunaapi/calls.hpp>
 
 struct k_thread;
-
-#define K_SYSTEM_CALL_COUNT 1
-
-// Calls
-#define SYSTEMCALL_EXIT 0
 
 typedef void (*syscall_handler_t)(k_thread *thread, void*);
 
