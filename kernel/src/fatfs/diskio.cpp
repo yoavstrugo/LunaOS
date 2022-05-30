@@ -7,11 +7,12 @@
 /* storage control modules to the FatFs module with a defined API.       */
 /*-----------------------------------------------------------------------*/
 
-#include "fatfs/ff.h"		/* Obtains integer types */
+#include "fatfs/ff.h"	  /* Obtains integer types */
 #include "fatfs/diskio.h" /* Declarations of disk functions */
 
 #include <storage/ahci/ahci.hpp>
 #include <kernel.hpp>
+#include <system/cmos.hpp>
 
 /* Definitions of physical drive number for each drive */
 #define DEV_RAM 0 /* Example: Map Ramdisk to physical drive 0 */
@@ -109,26 +110,47 @@ DRESULT disk_ioctl(
 	DRESULT res;
 	int result;
 
-	switch (pdrv)
+	switch (cmd)
 	{
-	case DEV_RAM:
+	case CTRL_TRIM:
+	case CTRL_SYNC:
+	{
+		return RES_OK;
+	}
+	case GET_SECTOR_COUNT:
+	{
+		DWORD sectorCount = mainDriver->getSectorCount(pdrv);
+		LBA_t *lbat = (LBA_t *)buff;
+		*lbat = sectorCount;
 
-		// Process of the command for the RAM drive
+		return RES_OK;
+	}
 
-		return res;
-
-	case DEV_MMC:
-
-		// Process of the command for the MMC/SD card
-
-		return res;
-
-	case DEV_USB:
-
-		// Process of the command the USB drive
-
-		return res;
+	case GET_SECTOR_SIZE:
+	{
+		WORD *word = (WORD *)buff;
+		*word = 512;
+		return RES_OK;
+	}
+	case GET_BLOCK_SIZE:
+	{
+		DWORD *dword = (DWORD *)buff;
+		*dword = 1;
+		return RES_OK;
+	}
 	}
 
 	return RES_PARERR;
+}
+
+DWORD get_fattime(void)
+{
+	k_datetime datetime = cmosGetDatetime();
+
+	return (DWORD)(datetime.year - 80) << 25 |
+		   (DWORD)(datetime.month + 1) << 21 |
+		   (DWORD)datetime.day << 16 |
+		   (DWORD)datetime.hour << 11 |
+		   (DWORD)datetime.minute << 5 |
+		   (DWORD)datetime.second >> 1;
 }
