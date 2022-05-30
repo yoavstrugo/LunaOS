@@ -2,30 +2,30 @@
 
 char *strchr(const char *p, int ch)
 {
-	char c;
+    char c;
 
-	c = ch;
-	for (;; ++p) {
-		if (*p == c)
-			return ((char *)p);
-		if (*p == '\0')
-			return (NULL);
-	}
-	/* NOTREACHED */
+    c = ch;
+    for (;; ++p)
+    {
+        if (*p == c)
+            return ((char *)p);
+        if (*p == '\0')
+            return (NULL);
+    }
+    /* NOTREACHED */
 }
 
-int
-memcmp (const void *str1, const void *str2, size_t count)
+int memcmp(const void *str1, const void *str2, size_t count)
 {
-  register const unsigned char *s1 = (const unsigned char*)str1;
-  register const unsigned char *s2 = (const unsigned char*)str2;
+    register const unsigned char *s1 = (const unsigned char *)str1;
+    register const unsigned char *s2 = (const unsigned char *)str2;
 
-  while (count-- > 0)
+    while (count-- > 0)
     {
-      if (*s1++ != *s2++)
-	  return s1[-1] < s2[-1] ? -1 : 1;
+        if (*s1++ != *s2++)
+            return s1[-1] < s2[-1] ? -1 : 1;
     }
-  return 0;
+    return 0;
 }
 
 // Function to implement strcmp function
@@ -90,7 +90,8 @@ int strncmp(const char *s1, const char *s2, size_t n)
     return c1 - c2;
 }
 
-void memcpy(void *dstpp, const void *srcpp, size_t len) {
+void memcpy(void *dstpp, const void *srcpp, size_t len)
+{
     memcpy(dstpp, (void *)srcpp, len);
 }
 
@@ -105,7 +106,13 @@ void memcpy(void *dest, void *src, size_t n)
         cdest[i] = csrc[i];
 }
 
-void memset(char *addr, char value, size_t len) {
+void memset(char *addr, char value, size_t len)
+{
+    memset((unsigned char *)addr, value, len);
+}
+
+void memset(void *addr, char value, size_t len)
+{
     memset((unsigned char *)addr, value, len);
 }
 
@@ -115,6 +122,15 @@ void memset(unsigned char *addr, char value, size_t len)
     {
         addr[i] = value;
     }
+}
+
+size_t strlen(const char *str)
+{
+    register const char *s;
+
+    for (s = str; *s; ++s)
+        ;
+    return (s - str);
 }
 
 // toString methods

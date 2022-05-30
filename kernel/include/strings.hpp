@@ -15,6 +15,9 @@ void memcpy(void *dstpp, const void *srcpp, size_t len);
 
 void memset(unsigned char *addr, char value, size_t len);
 void memset(char *addr, char value, size_t len);
+void memset(void *addr, char value, size_t len);
+
+size_t strlen(const char *str);
 
 const char *toString(uint8_t num);
 const char *toString(uint16_t num);
