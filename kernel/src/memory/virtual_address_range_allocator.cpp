@@ -4,6 +4,7 @@
 #include <memory/paging.hpp>
 #include <logger/logger.hpp>
 #include <stddef.h>
+#include <strings.hpp>
 
 k_virtual_address_range_allocator::k_virtual_address_range_allocator()
 {
@@ -50,14 +51,16 @@ void k_virtual_address_range_allocator::addRange(virtual_address_t start, virtua
         }
     }
 
-    #ifdef VERBOSE_VADDRALLOCATOR
+#ifdef VERBOSE_VADDRALLOCATOR
     logDebugn("%! Added range 0x%64x-0x%64x (%d pages)", "[VAddr Allocator]", start, end, addressHeader->pages);
-    #endif
+#endif
 
     this->mergeAll();
 }
 
-virtual_address_t k_virtual_address_range_allocator::allocateRange(uint64_t pages)
+
+
+virtual_address_t k_virtual_address_range_allocator::allocateRange(uint64_t pages, const char *request)
 {
     k_address_range_header *range = this->head;
 
@@ -77,6 +80,7 @@ virtual_address_t k_virtual_address_range_allocator::allocateRange(uint64_t page
     }
 
     range->used = true;
+    memcpy(range->requestBy, request, 4);
 
     if (range->pages > pages)
     {
@@ -86,14 +90,16 @@ virtual_address_t k_virtual_address_range_allocator::allocateRange(uint64_t page
         split->pages = range->pages - pages;
         split->base = range->base + pages * PAGE_SIZE;
 
+        lastSplit = split;
+
         range->next = split;
     }
 
     range->pages = pages;
 
-    #ifdef VERBOSE_VADDRALLOCATOR
+#ifdef VERBOSE_VADDRALLOCATOR
     logDebugn("%! Allocated %d pages, from base 0x%64x.", "[VAddr Allocator]", pages, range->base);
-    #endif
+#endif
 
     return range->base;
 }
@@ -114,12 +120,12 @@ void k_virtual_address_range_allocator::mergeAll()
             k_address_range_header *followingRange = range->next;
             range->next = followingRange->next;
 
-        #ifdef VERBOSE_VADDRALLOCATOR
+#ifdef VERBOSE_VADDRALLOCATOR
             logDebugn("%! Successfully merged ranges from %d pages to %d pages.",
                       "[VAddr Allocator]",
                       range->pages - followingRange->pages,
                       range->pages);
-        #endif
+#endif
 
             // no longer need to next range header
             delete followingRange;
@@ -152,12 +158,65 @@ void k_virtual_address_range_allocator::freeRange(virtual_address_t base)
     }
 
     range->used = false;
-    #ifdef VERBOSE_VADDRALLOCATOR
+#ifdef VERBOSE_VADDRALLOCATOR
     logDebugn("%! Successfully freed range of size %d pages, base 0x%64x", "[VAddr Allocator]", range->pages, range->base);
-    #endif
+#endif
     this->mergeAll();
 }
 
-k_address_range_header* k_virtual_address_range_allocator::getRanges() {
+k_address_range_header *k_virtual_address_range_allocator::getRanges()
+{
     return this->head;
+}
+
+void k_virtual_address_range_allocator::useRange(virtual_address_t start, uint64_t size)
+{
+    // Look for the range contains the range to remove
+    k_address_range_header *range = this->head;
+    k_address_range_header *prev = NULL;
+
+    uint64_t startAligned = PAGING_ALIGN_PAGE_DOWN(start);
+    uint64_t sizeAligned = PAGING_ALIGN_PAGE_UP(size);
+    uint64_t sizePages = sizeAligned / PAGE_SIZE;
+
+    while (range)
+    {
+        if ((virtual_address_t)range->base > startAligned &&
+            (virtual_address_t)range->base < startAligned + sizeAligned)
+            startAligned = range->base;
+
+        if (((virtual_address_t)range->base <= startAligned) && !range->used)
+        {
+            if (range->base == startAligned) {
+                k_address_range_header *split = new k_address_range_header();
+                split->used = false;
+                split->next = range->next;
+                split->pages = range->pages - sizePages;
+                split->base = range->base + sizeAligned;
+                range->used =true;
+
+                range->next = split;
+            } else {
+                k_address_range_header *split1 = new k_address_range_header();
+                k_address_range_header *split2 = new k_address_range_header();
+
+                split1->pages = sizePages;
+                split1->base = startAligned;
+                split1->used = true;
+                split1->next = split2;
+
+                split2->next = range->next;
+                split2->pages = range->pages;
+
+                range->next = split1;
+                range->pages = (split1->base - range->base) / PAGE_SIZE;
+
+                split2->pages -= range->pages + split1->pages;
+            }
+
+            break;
+        }
+        prev = range;
+        range = range->next;
+    }
 }

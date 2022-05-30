@@ -16,6 +16,8 @@ struct k_address_range_header
     // Is the address range in use?
     bool used;
 
+    char requestBy[4];
+
     // The next address range in the list
     k_address_range_header *next;
 };
@@ -44,12 +46,14 @@ struct k_virtual_address_range_allocator
      * @param pages How many pages shall the address range contain
      * @return virtual_address_t The start of the address range
      */
-    virtual_address_t allocateRange(uint64_t pages);
+    virtual_address_t allocateRange(uint64_t pages, const char *request);
 
     /**
      * @brief Free an allocated virtual range.
      */
     void freeRange(virtual_address_t base);
+
+    void useRange(virtual_address_t start, uint64_t size);
 
     /**
      * @brief Returns all the ranges of this allocator
@@ -61,6 +65,7 @@ struct k_virtual_address_range_allocator
 private:
     // The head of the address range linked-list
     k_address_range_header *head;
+    k_address_range_header *lastSplit;
 
     /**
      * @brief Loop over the list and try to merge the address ranges
