@@ -35,6 +35,10 @@
 
 #include <storage/ahci/ahci.hpp>
 #include <system/pci/pci.hpp>
+#include <system/cmos.hpp>
+
+#include <filesystem.hpp>
+#include <elf/elf.hpp>
 
 // We need to tell the stivale bootloader where we want our stack to be.
 // We are going to allocate our stack as an array in .bss.
@@ -67,6 +71,7 @@ static stivale2_header_tag_smp smp_hdr_tag{
         .identifier = STIVALE2_HEADER_TAG_SMP_ID,
         .next = (uint64_t)&framebuffer_hdr_tag},
     .flags = 1UL};
+
 
 // The stivale2 specification says we need to define a "header structure".
 // This structure needs to reside in the .stivale2hdr ELF section in order
@@ -138,20 +143,20 @@ void kernelInitialize(stivale2_struct *stivaleInfo)
     taskingInitialize(1);
     taskingAddCPU(0);
 
-    k_pci_device_hdr *ahciDevice = pciGetDevice(0x01, 0x06, 0x01);
-    mainDriver = new k_ahci_driver(ahciDevice);
+    filesystemInitialize();
 
-    FIL* fp;
-    FRESULT result = f_open(fp, "file.txt", FA_WRITE);
-    if (result != FR_OK)
-        logWarnn("Failed opening file, result: %d", result);
+    ELF_LOAD_STATUS status;
+    if((status = elfLoad("root/apps/testapp.elf")) == SUCCESS)
+        logInfon("SUCCESS");
+    else 
+        logInfon("FAILED %d", status);
 
 
     // k_process *proc = taskingCreateProcess();
     // taskingCreateProcess();
     // taskingCreateThread((virtual_address_t)threadProgram, proc, KERNEL);
 
-    // lapicStartTimer();
+    lapicStartTimer();
 }
 
 void kernelPanic(const char *msg, ...)
@@ -180,10 +185,4 @@ void kernelHalt()
     {
         asm("hlt");
     }
-}
-
-virtual_address_t kernelGetStack()
-{
-    return NULL;
-    // return (virtual_address_t)stack;
 }
