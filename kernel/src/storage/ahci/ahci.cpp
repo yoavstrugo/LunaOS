@@ -14,7 +14,7 @@ k_ahci_driver::k_ahci_driver(k_pci_device_hdr *pciBaseAddress)
     logInfon("%! AHCI Driver instance initalized.", "[AHCI Driver]");
 
     physical_address_t physABAR = ((k_pci_header0 *)pciBaseAddress)->BAR5;
-    virtual_address_t virtABAR = virtualAddressRangeAllocator.allocateRange(1);
+    virtual_address_t virtABAR = virtualAddressRangeAllocator.allocateRange(1, "ahci");
     if (virtABAR == NULL)
         kernelPanic("%! Couldn't allocated address for ABAR.", "[AHCI Driver]");
 
@@ -35,9 +35,26 @@ bool k_ahci_driver::initialize(uint8_t drive)
         return false;
 
     k_ahci_port *port = this->ports[drive];
+
+    if (port->initialized)
+        return true;
+
     port->rebase();
 
-    return port->rebased;
+    
+    port->identity = (k_SATA_ident *)virtualAddressRangeAllocator.allocateRange(1, "ahci");
+    pagingMapPage((virtual_address_t)port->identity, memoryPhysicalAllocator.allocatePage());
+    memset((char*)port->identity, 0, 0x1000);
+
+    port->identify();
+    
+    logDebugn("%! Initialized drive with:\
+                \n\t- Sector count: %d",
+              "[AHCI Driver]", port->identity->lba_capacity);
+
+
+
+    return port->initialized;
 }
 
 bool k_ahci_driver::status(uint8_t drive)
@@ -47,7 +64,7 @@ bool k_ahci_driver::status(uint8_t drive)
 
     k_ahci_port *port = this->ports[drive];
 
-    return port->rebased;
+    return port->initialized;
 }
 
 bool k_ahci_driver::read(uint8_t drive, uint64_t sector, uint32_t count, uint8_t *buf)
@@ -57,7 +74,7 @@ bool k_ahci_driver::read(uint8_t drive, uint64_t sector, uint32_t count, uint8_t
 
     k_ahci_port *port = this->ports[drive];
 
-    if (!port->rebased)
+    if (!port->initialized)
         return false;
 
     port->buffer = buf;
@@ -74,7 +91,7 @@ bool k_ahci_driver::write(uint8_t drive, uint64_t sector, uint32_t count, uint8_
 
     k_ahci_port *port = this->ports[drive];
 
-    if (!port->rebased)
+    if (!port->initialized)
         return false;
 
     port->buffer = buf;
@@ -134,11 +151,69 @@ void k_ahci_port::stopCMD()
     // Wait until FR (bit14), CR (starth
 }
 
+bool k_ahci_port::identify()
+{
+    this->hbaPort->is = 0xffff; // Clear pending interrupt bits
+
+    // Find a free command slot
+    int slot = this->findCMDslot();
+    if (slot == -1)
+        return false;
+
+    // Edit the header for the command for the read
+    k_HBA_cmd_header *cmdHeader = (k_HBA_cmd_header *)this->virtualCLB;
+    cmdHeader += slot;
+    cmdHeader->cfl = sizeof(FIS_REG_H2D) / sizeof(uint32_t); // Command FIS size
+    cmdHeader->w = 0;                                        // Read from device
+    cmdHeader->c = 1;                                        // Read from device
+    cmdHeader->p = 1;                                        // Read from device
+    cmdHeader->prdtl = 1;     // PRDT entries count
+
+    // Edit the command table for the read
+    k_HBA_cmd_table *cmdTable = this->virtualCTBs[slot];
+
+    physical_address_t bufferPhysical = pagingVirtualToPhysical((virtual_address_t)this->identity);
+
+    cmdTable->prdt_entry[0].dba = (uint32_t)(bufferPhysical & 0xFFFFFFFF);
+    cmdTable->prdt_entry[0].dbau = (uint32_t)((bufferPhysical >> 32) & 0xFFFFFFFF);
+
+    cmdTable->prdt_entry[0].dbc = 0x1FF; // multiply by 512 bytes per sector
+    cmdTable->prdt_entry[0].i = 0;
+
+    // Create the FIS (Frame Information Structure)
+    FIS_REG_H2D *cmdFIS = (FIS_REG_H2D *)(&cmdTable->cfis);
+    memset((char*)cmdFIS, 0, sizeof(FIS_REG_H2D));
+    cmdFIS->fis_type = FIS_TYPE_REG_H2D;
+    cmdFIS->c = 1; // Command
+    cmdFIS->command = ATA_CMD_IDENTIFY_DEV;
+
+    // Wait until the port is free
+    uint64_t spin = 0; // Spinlock
+    while ((hbaPort->tfd & (ATA_DEV_BUSY | ATA_DEV_DRQ)) && spin < 1000000)
+    {
+        spin++;
+    }
+    if (spin == 1000000)
+    {
+        logInfon("%! Port %d is hung.", "[AHCI Driver]", this->portNumber);
+        return false;
+    }
+
+    // Issue command and check for success
+    this->hbaPort->ci = 1 << slot;
+    while (1)
+    {
+        if ((this->hbaPort->ci & (1 << slot)) == 0)
+            break;
+    }
+    return true;
+}
+
 void k_ahci_port::rebase()
 {
     stopCMD(); // Stop command engine
 
-    this->rebased = true;
+    this->initialized = true;
 
     // Rebase the CLB (Command List Base Address)
     // Note that that address must be 1024byte-aligned and we complying with this
@@ -146,17 +221,17 @@ void k_ahci_port::rebase()
     physical_address_t clbPhys = memoryPhysicalAllocator.allocatePage();
     if (!clbPhys)
     {
-        this->rebased = false;
+        this->initialized = false;
         return;
     }
 
     this->hbaPort->clb = clbPhys;
     this->hbaPort->clbu = clbPhys >> 32;
 
-    virtual_address_t clbVirt = virtualAddressRangeAllocator.allocateRange(1);
+    virtual_address_t clbVirt = virtualAddressRangeAllocator.allocateRange(1, "ahci");
     if (!clbVirt)
     {
-        this->rebased = false;
+        this->initialized = false;
         return;
     }
     pagingMapPage(clbVirt, clbPhys);
@@ -188,15 +263,15 @@ void k_ahci_port::rebase()
     for (int t = 0; t < 2; t++)
     {
         physical_address_t ctbPhys = memoryPhysicalAllocator.allocatePage();
-        virtual_address_t ctbVirt = virtualAddressRangeAllocator.allocateRange(1);
+        virtual_address_t ctbVirt = virtualAddressRangeAllocator.allocateRange(1, "ahci");
         if (!ctbPhys || !ctbVirt)
         {
-            this->rebased = false;
+            this->initialized = false;
             return;
         }
         pagingMapPage(ctbVirt, ctbPhys);
 
-        for (int offset = 0; offset < PAGE_SIZE; offset += sizeof(k_HBA_cmd_table))
+        for (int offset = 0; offset < PAGE_SIZE; offset += 256)
         {
             cmdheader[CHi].prdtl = 8; // 8 PRDT entries per CTB
 
@@ -258,7 +333,8 @@ void k_ahci_driver::probePorts()
                 this->ports[portCount]->portNumber = i;
                 this->ports[portCount]->hbaPort = &this->ABAR->ports[i];
                 this->ports[portCount]->cmdSlots = this->cmdSlots;
-                this->ports[portCount]->rebased = false;
+                this->ports[portCount]->initialized = false;
+                this->ports[portCount]->inWrite = false;
                 this->portCount++;
             }
         }
@@ -369,8 +445,29 @@ bool k_ahci_port::read(uint32_t startl, uint32_t starth, uint32_t count, uint8_t
     return true;
 }
 
+uint64_t k_ahci_port::getSectorCount()
+{
+    if (!this->initialized)
+        return 0;
+    return (uint64_t)(this->identity->lba_capacity);
+}
+
+uint64_t k_ahci_driver::getSectorCount(uint8_t drive)
+{
+    if (!(drive < this->portCount))
+        return false;
+
+    k_ahci_port *port = this->ports[drive];
+
+    if (!port->initialized)
+        return false;
+
+    return port->getSectorCount();
+}
+
 bool k_ahci_port::write(uint32_t startl, uint32_t starth, uint32_t count, uint8_t *buf)
 {
+    this->inWrite = true;
     this->hbaPort->is = 0xffff; // Clear pending interrupt bits
 
     // Find a free command slot
@@ -454,5 +551,6 @@ bool k_ahci_port::write(uint32_t startl, uint32_t starth, uint32_t count, uint8_
         return false;
     }
 
+    this->inWrite = false;
     return true;
 }
