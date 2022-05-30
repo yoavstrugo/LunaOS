@@ -6,8 +6,9 @@
 #include <strings.hpp>
 
 #include <syscalls/syscalls_tasking.hpp>
+#include <../../lunaapi/calls.hpp>
 
-static syscall_handler_t systemCalls[K_SYSTEM_CALL_COUNT];
+static syscall_handler_t systemCalls[SYSTEMCALL_COUNT];
 
 void syscallHandle(k_thread *thread)
 {
@@ -49,9 +50,9 @@ void syscallThread()
 
 void syscallRegister(uint16_t id, syscall_handler_t handler)
 {
-    if (id > K_SYSTEM_CALL_COUNT)
+    if (id > SYSTEMCALL_COUNT)
     {
-        kernelPanic("%! Tried to register system call with id %d but maximum is %d", "[System Calls]", id, K_SYSTEM_CALL_COUNT);
+        kernelPanic("%! Tried to register system call with id %d but maximum is %d", "[System Calls]", id, SYSTEMCALL_COUNT);
     }
 
     if (systemCalls[id] != NULL)
