@@ -10,6 +10,7 @@ CC := g++
 endif
 
 ASMC := nasm
+GCC := gcc
 
 # Likewise, "ld" here is just a placeholder and your mileage may vary if using the
 # host's "ld".
@@ -19,8 +20,11 @@ endif
 
 vpath %.asm $(sort $(dir $(shell find ./src -type f -name '*')))
 vpath %.cpp $(sort $(dir $(shell find ./src -type f -name '*')))
+vpath %.c 	fatfs
 vpath %.h 	include
+vpath %.h 	fatfs
 vpath %.hpp include
+vpath %.hpp ../../lunaapi
 vpath %.o 	lib
 vpath %.d 	lib
 vpath %.elf bin
@@ -32,6 +36,8 @@ SRCDIR          = src
 INCLUDESDIR     = include
 BUILDDIR        = bin
 OBJDIR          = lib
+
+APIDIR 			= ../../lunaapi
 
 DIRS += SRCDIR
 DIRS += INCLUDESDIR
@@ -49,6 +55,7 @@ ASMFLAGS ?= -f elf64
 # Internal C flags that should not be changed by the user.
 override INTERNALCFLAGS :=   \
 	-I $(INCLUDESDIR)    \
+	-I $(APIDIR)    	\
 	-std=c++98           \
 	-Wno-conversion-null \
 	-Wno-unused-parameter \
@@ -73,6 +80,7 @@ override INTERNALCFLAGS :=   \
 # Internal linker flags that should not be changed by the user.
 override INTERNALLDFLAGS :=    \
 	-I $(INCLUDESDIR)      \
+	-I $(APIDIR)    		\
 	-T kernel.ld           \
 	-nostdlib              \
 	-zmax-page-size=0x1000 \
@@ -80,8 +88,10 @@ override INTERNALLDFLAGS :=    \
 
 # Use find to glob all *.c files in the directory and extract the object names.
 SRCS 			= $(shell find ./src/ -type f -name '*.cpp')
+CSRCS			= $(shell find ./fatfs/ -type f -name '*.c')
 ASMSRC			= $(shell find ./src/ -type f -name '*.asm')
 OBJS 			= $(patsubst %.cpp, %.o, $(notdir $(SRCS)))
+OBJS 			+= $(patsubst %.c, %.o, $(notdir $(CSRCS)))
 OBJS 			+= $(patsubst %.asm, %_asm.o, $(notdir $(ASMSRC)))
 HEADER_DEPS 	= $(OBJS:.cpp=.d)
 
@@ -107,6 +117,10 @@ $(DIRS):
 %.o: %.cpp stivale2.h
 	@echo "--> Compiling $^ to $@"
 	@$(CC) $(CFLAGS) $(INTERNALCFLAGS) -c $< -o $(OBJDIR)/$@
+
+%.o: %.c 
+	@echo "--> Compiling $^ to $@"
+	@$(GCC) $(CFLAGS) $(INTERNALCFLAGS) -c $< -o $(OBJDIR)/$@
 
 # Compilation rules for *.c files.
 #include $(HEADER_DEPS)

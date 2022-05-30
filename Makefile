@@ -24,7 +24,7 @@ QEMU_CORES 		= 1
 QEMU_MEM		= 1.5G
 QEMU_CPU		= qemu64
 QEMU_MACHINE 	= q35
-QEMU_FLAGS 	= -m ${QEMU_MEM} -cpu ${QEMU_CPU} -smp ${QEMU_CORES} -M ${QEMU_MACHINE} -net none -drive file=./text.txt
+QEMU_FLAGS 	= -m ${QEMU_MEM} -cpu ${QEMU_CPU} -smp ${QEMU_CORES} -M ${QEMU_MACHINE} -net none -drive file=./os-disk.img
 
 .PHONY: buildimg
 buildimg: 
