@@ -11,11 +11,13 @@ k_userspace_allocator::k_userspace_allocator()
 {
     this->userspaceCodeStart = NULL;
     this->userspaceHeapStart = NULL;
-    this->threadsStackAllocator = new k_virtual_address_range_allocator();
-    this->threadsStackAllocator->addRange(USERSPACE_MEMORY_START + 0x1000, USERSPACE_STACK_MAX);
+    this->memoryAllocator = new k_virtual_address_range_allocator();
+    this->memoryAllocator->addRange(USERSPACE_MEMORY_START + 0x1000, USERSPACE_STACK_MAX);
 
     // Map the memory for the process
     this->pml4Physical = memoryPhysicalAllocator.allocatePage();
+
+    memset((char*)PAGING_APPLY_DIRECTMAP(this->pml4Physical), 0, PAGE_SIZE);
 
     // Copy the kernel mappings
     pagingCopyKernelMappings(this->pml4Physical);
@@ -29,6 +31,7 @@ physical_address_t k_userspace_allocator::getSpace()
     return this->pml4Physical;
 }
 
+static int FAULT_COUNT = 0;
 void k_userspace_allocator::allocateUserspaceCode(uint64_t userspaceCodeSize)
 {
     // Calculate the starting page for the userspace code
@@ -38,6 +41,7 @@ void k_userspace_allocator::allocateUserspaceCode(uint64_t userspaceCodeSize)
     uint64_t pages = (USERSPACE_MEMORY_END - this->userspaceCodeStart) / PAGE_SIZE;
     for (uint64_t page = 0; page < pages; page++)
     {
+        FAULT_COUNT++;
         physical_address_t phys = memoryPhysicalAllocator.allocatePage();
         virtual_address_t virt = this->userspaceCodeStart + PAGE_SIZE * page;
 
@@ -51,10 +55,10 @@ void k_userspace_allocator::allocateUserspaceCode(uint64_t userspaceCodeSize)
 
 void k_userspace_allocator::allocateUserspaceHeap()
 {
-    if (!this->userspaceCodeStart)
-        kernelPanic("%! Cannot allocate heap before code was allocated.", "[Userspace Allocator]");
+    // if (!this->userspaceCodeStart)
+    //     kernelPanic("%! Cannot allocate heap before code was allocated.", "[Userspace Allocator]");
 
-    uint64_t heapEnd = this->userspaceCodeStart;
+    uint64_t heapEnd = USERSPACE_MEMORY_END - 1 * GiB_unit;//this->userspaceCodeStart;
     uint64_t heapStart = PAGING_ALIGN_PAGE_DOWN(heapEnd - USERSPACE_HEAP_INITIAL_SIZE);
 
     for (uint64_t virt = heapStart; virt < heapEnd; virt += PAGE_SIZE)
@@ -122,7 +126,7 @@ void k_userspace_allocator::free()
     #endif
 
     // Free userspace stacks
-    k_address_range_header *range = this->threadsStackAllocator->getRanges();
+    k_address_range_header *range = this->memoryAllocator->getRanges();
     while (range)
     {
         if (range->used)
@@ -176,12 +180,12 @@ virtual_address_t k_userspace_allocator::allocateStack(uint64_t stackSize, bool 
     k_paging_flags flags;
     if (!kernelStack)
     {
-        stackPtr = this->threadsStackAllocator->allocateRange(pages);
+        stackPtr = this->memoryAllocator->allocateRange(pages, "usal");
         flags = USERSPACE_DEFAULT_PAGING_FLAGS;
     }
     else
     {
-        stackPtr = virtualAddressRangeAllocator.allocateRange(pages);
+        stackPtr = virtualAddressRangeAllocator.allocateRange(pages, "usal");
         k_address_range_header *range = new k_address_range_header();
         range->base = stackPtr;
         range->pages = pages;
@@ -217,7 +221,7 @@ virtual_address_t k_userspace_allocator::allocateInterruptStack(uint64_t stackSi
 
     virtual_address_t stackPtr;
 
-    stackPtr = virtualAddressRangeAllocator.allocateRange(pages);
+    stackPtr = virtualAddressRangeAllocator.allocateRange(pages, "usal");
     k_address_range_header *range = new k_address_range_header();
     range->base = stackPtr;
     range->pages = pages;
@@ -245,9 +249,24 @@ virtual_address_t k_userspace_allocator::allocateInterruptStack(uint64_t stackSi
     return stackPtr;
 }
 
+void k_userspace_allocator::allocateSegment(virtual_address_t start, uint64_t size) {
+    virtual_address_t startAligned = PAGING_ALIGN_PAGE_DOWN(start);
+    virtual_address_t endAligned   = PAGING_ALIGN_PAGE_UP(start + size);
+    uint64_t pages = (endAligned - startAligned) / PAGE_SIZE;
+
+    this->memoryAllocator->useRange(startAligned, pages);
+    for (uint64_t page = 0; page < pages; page++)
+    {
+        physical_address_t phys = memoryPhysicalAllocator.allocatePage();
+        pagingMapPageInSpace(start + page * PAGE_SIZE, phys, this->pml4Physical);
+    }
+    
+    memset((char *)startAligned, 0, pages * PAGE_SIZE);
+}
+
 void k_userspace_allocator::freeStack(virtual_address_t stackPtr)
 {
-    this->threadsStackAllocator->freeRange(stackPtr);
+    this->memoryAllocator->freeRange(stackPtr);
 }
 
 virtual_address_t k_userspace_allocator::getUserspaceCodeStart()

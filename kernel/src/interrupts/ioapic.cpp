@@ -14,7 +14,7 @@ void ioapicAdd(uint8_t id, physical_address_t physcialAddress, uint32_t globalSy
     k_ioapic_entry *ioapic = new k_ioapic_entry();
 
     // Create a mapping for the ioapic entry
-    virtual_address_t virt = virtualAddressRangeAllocator.allocateRange(2);
+    virtual_address_t virt = virtualAddressRangeAllocator.allocateRange(2, "ioap");
     if (!virt)
         kernelPanic("%! Couldn't allocate virtual range for mapping", "[IOAPIC]");
 

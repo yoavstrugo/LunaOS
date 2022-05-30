@@ -23,7 +23,7 @@ void lapicPrepare(physical_address_t lapicAddress)
                  K_LAPIC_EXPECTED_ADDRESS);
 
     // Map a virtual address to the physical address
-    virtual_address_t lapicVirtAddress = virtualAddressRangeAllocator.allocateRange(1);
+    virtual_address_t lapicVirtAddress = virtualAddressRangeAllocator.allocateRange(1, "lapc");
     if (!lapicVirtAddress)
         kernelPanic("%! Couldn't get a virtual address for the global Local APIC physical address.", "[LAPIC]");
 
