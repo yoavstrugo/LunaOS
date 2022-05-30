@@ -50,7 +50,7 @@ k_process *taskingCreateProcess()
     // 2 MiB for code, should change to ELF size
     uint64_t codeSize = 2 * MiB_unit;
     process->processAllocator = new k_userspace_allocator();
-    process->processAllocator->allocateUserspaceCode(codeSize);
+    // process->processAllocator->allocateUserspaceCode(codeSize);
     process->processAllocator->allocateUserspaceHeap();
     process->addressSpace = process->processAllocator->getSpace();
 
@@ -111,6 +111,8 @@ k_thread *taskingCreateThread(virtual_address_t entryPoint, k_process *process, 
 {
     k_thread *thread = new k_thread();
     thread->process = process;
+
+    pagingSwitchSpace(thread->process->addressSpace);
 
     taskingInitalizeThreadMemory(thread, privilege);
     // Set the IP for the thread
