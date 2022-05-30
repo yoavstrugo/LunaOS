@@ -22,6 +22,7 @@ void schedulerInit()
 
     priorityBoostTime = 0;
     runningJob = NULL;
+    initialized = true;
 }
 
 uint64_t schedulerGetTimeAllotment(uint8_t priority)
