@@ -10,14 +10,17 @@
 #include <system/pci/pci_devices.hpp>
 
 static k_pci_device_entry *devices;
+static int PCI_REQUESTS = 0;
 
 void pciParseBus(physical_address_t base, uint64_t bus)
 {
+    logDebugn("Checking bus %d", bus);
     uint64_t offset = bus << 20;
 
     physical_address_t addr = base + offset;
     physical_address_t physBusAddr = PAGING_ALIGN_PAGE_DOWN(base + offset);
-    virtual_address_t busAddrAligned = virtualAddressRangeAllocator.allocateRange(1);
+    virtual_address_t busAddrAligned = virtualAddressRangeAllocator.allocateRange(1, "pci\0");
+    PCI_REQUESTS++;
     pagingMapPage(busAddrAligned, physBusAddr);
 
     virtual_address_t busAddr = busAddrAligned + ((base + offset) - physBusAddr);
@@ -27,9 +30,16 @@ void pciParseBus(physical_address_t base, uint64_t bus)
     if (deviceHeader->deviceId == 0)
         return; // Invalid device
     if (deviceHeader->deviceId == 0xFFFF)
+    {
+        pagingUnmapPage(busAddrAligned);
+        virtualAddressRangeAllocator.freeRange(busAddrAligned);
+        PCI_REQUESTS--;
         return;
+    }
 
     pagingUnmapPage(busAddrAligned);
+    virtualAddressRangeAllocator.freeRange(busAddrAligned);
+    PCI_REQUESTS--;
 
     // Each bus has up to 32 devices
     for (uint64_t device = 0; device < 32; device++)
@@ -40,11 +50,13 @@ void pciParseBus(physical_address_t base, uint64_t bus)
 
 void pciParseDevice(physical_address_t bus, uint64_t device)
 {
+    logDebugn("\t- Checking device %d", device);
     uint64_t offset = device << 15;
 
     physical_address_t addr = bus + offset;
     physical_address_t physDriveAddr = PAGING_ALIGN_PAGE_DOWN(addr);
-    virtual_address_t deviceAddrAligned = virtualAddressRangeAllocator.allocateRange(1);
+    virtual_address_t deviceAddrAligned = virtualAddressRangeAllocator.allocateRange(1, "pci\0");
+    PCI_REQUESTS++;
     pagingMapPage(deviceAddrAligned, physDriveAddr);
 
     virtual_address_t deviceAddr = deviceAddrAligned + ((bus + offset) - physDriveAddr);
@@ -54,9 +66,16 @@ void pciParseDevice(physical_address_t bus, uint64_t device)
     if (deviceHeader->deviceId == 0)
         return; // Invalid device
     if (deviceHeader->deviceId == 0xFFFF)
+    {
+        pagingUnmapPage(deviceAddrAligned);
+        virtualAddressRangeAllocator.freeRange(deviceAddrAligned);
+        PCI_REQUESTS--;
         return;
+    }
 
     pagingUnmapPage(deviceAddrAligned);
+    virtualAddressRangeAllocator.freeRange(deviceAddrAligned);
+    PCI_REQUESTS--;
 
     // Each device has 8 functions
     for (uint64_t function = 0; function < 8; function++)
@@ -65,12 +84,15 @@ void pciParseDevice(physical_address_t bus, uint64_t device)
     }
 }
 
+// static int count = 0;
 void pciParseFunction(virtual_address_t deviceAddr, uint64_t function)
 {
+    logDebugn("\t\t* Checking function %d", function);
     uint64_t offset = function << 12;
 
     physical_address_t physFuncAddr = PAGING_ALIGN_PAGE_DOWN(deviceAddr + offset);
-    virtual_address_t funcAddrAligned = virtualAddressRangeAllocator.allocateRange(1);
+    virtual_address_t funcAddrAligned = virtualAddressRangeAllocator.allocateRange(1, "pci\0");
+    PCI_REQUESTS++;
     pagingMapPage(funcAddrAligned, physFuncAddr);
 
     virtual_address_t funcAddr = funcAddrAligned + ((deviceAddr + offset) - physFuncAddr);
@@ -80,7 +102,12 @@ void pciParseFunction(virtual_address_t deviceAddr, uint64_t function)
     if (deviceHeader->deviceId == 0)
         return; // Invalid device
     if (deviceHeader->deviceId == 0xFFFF)
+    {
+        pagingUnmapPage(funcAddrAligned);
+        virtualAddressRangeAllocator.freeRange(funcAddrAligned);
+        PCI_REQUESTS--;
         return;
+    }
 
     // Add it to the list
     k_pci_device_entry *deviceEntry = new k_pci_device_entry();
