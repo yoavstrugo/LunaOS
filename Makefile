@@ -105,6 +105,13 @@ copytohost: buildiso
 	@echo "Copying $(OSNAME).iso to shared host folder '/mnt/hgfs/$(HOST_SHARE)'"
 	@cp $(OSNAME).iso /mnt/hgfs/$(HOST_SHARE)/$(OSNAME).iso
 
+.PHONY: createdisk
+createdisk:
+	@dd if=/dev/zero of=$(BUILDDIR)/os-disk.img bs=1024 count=2047 2>/dev/null
+
+.PHONY: mountdisk
+createdisk:
+	sudo kpartx -a -v os-disk.img
 
 $(KERNELBIN):
 	make -C kernel clean all
