@@ -50,6 +50,7 @@ k_thread_state *interruptHandler(k_thread_state *rsp)
 
     if (thread)
     {
+        // If there was a thread running before, store its context
         thread->context = rsp;
 
         if (thread->context->interruptCode < 0x20)
@@ -66,49 +67,16 @@ k_thread_state *interruptHandler(k_thread_state *rsp)
             requestHandlers[thread->context->interruptCode - 0x20](thread->context->errorCode);
         }
 
-        rsp = thread->context;
-    }
-    else
-    {
+    } else {
         // First thread
         taskingSwitch();
-        thread = taskingGetRunningThread();
     }
+
+    thread = taskingGetRunningThread();
 
     if (thread != NULL)
         rsp = thread->context;
-
-    // TODO: remove
-    // rsp->gs =       thread->context->gs;
-    // rsp->fs =       thread->context->fs    ;
-    // rsp->rax =      thread->context->rax  ;
-    // rsp->rbx =      thread->context->rbx ;
-    // rsp->rcx =      thread->context->rcx;
-    // rsp->rdx =      thread->context->rdx;
-    // rsp->rsi =      thread->context->rsi;
-    // rsp->rdi =      thread->context->rdi;
-
-    // rsp->r8 =       thread->context->r8;
-    // rsp->r9 =       thread->context->r9;
-    // rsp->r10 =      thread->context->r10;
-    // rsp->r11 =      thread->context->r11;
-    // rsp->r12 =      thread->context->r12;
-    // rsp->r13 =      thread->context->r13;
-    // rsp->r14 =      thread->context->r14;
-    // rsp->r15 =      thread->context->r15;
-    // rsp->rbp =      thread->context->rbp;
-
-    // rsp->interruptCode = thread->context->interruptCode;
-    // rsp->errorCode =     thread->context->errorCode;
-
-    // rsp->rip  =     thread->context->rip;
-    // rsp->cs  =      thread->context->cs;
-    // rsp->rflags  =  thread->context->rflags;
-    // rsp->rsp  =     thread->context->rsp;
-    // rsp->ss  =      thread->context->ss;
-
-    // logDebugn("TIMER");
-    // TODO: tss?
+    
     lapicSendEOI();
     return rsp;
 }
