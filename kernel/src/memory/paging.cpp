@@ -138,7 +138,7 @@ void pagingMapPageInSpace(virtual_address_t virt, physical_address_t phys,
     // Whether if override is on or the page isn't present, set the flags and the address.
     if (!(pte & PAGE_PRESENT) || override)
     {
-        pte &= (~((pagetable_entry_t)0)) << 12;
+        memset(&pte, 0, sizeof(pagetable_entry_t));
         pte |= flags.ptFlags;
         pte |= phys;
         pt[PT_INDEXER(virt)] = pte;
