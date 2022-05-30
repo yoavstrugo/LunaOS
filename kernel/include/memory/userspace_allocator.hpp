@@ -6,7 +6,7 @@
 
 #define USERSPACE_MEMORY_START          0x0000000000000000
 #define USERSPACE_MEMORY_END            0xFFFF800000000000
-#define USERSPACE_HEAP_INITIAL_SIZE     2 * MiB_unit
+#define USERSPACE_HEAP_INITIAL_SIZE     2 * KiB_unit
 #define USERSPACE_HEAP_EXPANSION        2 * MiB_unit
 #define USERSPACE_STACK_SIZE            10 * PAGE_SIZE
 #define INTERRUPT_STACK_SIZE            2 * PAGE_SIZE
@@ -32,6 +32,8 @@ struct k_userspace_allocator
      * @return virtual_address_t The start of the heap
      */
     void allocateUserspaceHeap();
+
+    void allocateSegment(virtual_address_t start, uint64_t size);
 
     /**
      * @brief Returns the address to the PML4 of this process space
@@ -110,6 +112,6 @@ private:
     virtual_address_t userspaceHeapStart;
     physical_address_t pml4Physical;
     virtual_address_t pml4Virtual;
-    k_virtual_address_range_allocator *threadsStackAllocator;
+    k_virtual_address_range_allocator *memoryAllocator;
     k_address_range_header *kernelspaceRanges;
 };
