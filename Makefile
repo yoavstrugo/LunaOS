@@ -110,7 +110,7 @@ createdisk:
 	@dd if=/dev/zero of=$(BUILDDIR)/os-disk.img bs=1024 count=2047 2>/dev/null
 
 .PHONY: mountdisk
-createdisk:
+mountdisk:
 	sudo kpartx -a -v os-disk.img
 
 $(KERNELBIN):
