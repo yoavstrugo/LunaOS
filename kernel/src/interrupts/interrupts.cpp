@@ -21,6 +21,7 @@ void interruptsInitialize()
     picRemapIRQs();
 
     ioapicCreateISARedirection(1, 1, 0);
+    ioapicCreateISARedirection(0x80, 0x80, 0);
     lapicInitialize();
     interruptsEnable();
 }
@@ -42,6 +43,7 @@ void interruptsInstallRoutines()
     idtCreateEntry(0x0E, (uint64_t)_iExc14, exceptionPageFault, 0x08, 0x00, K_IDT_TA_INTERRUPT);
     idtCreateEntry(0x20, (uint64_t)_iReq32, requestTimer, 0x08, 0x00, K_IDT_TA_INTERRUPT);
     idtCreateEntry(0x21, (uint64_t)_iReq33, requestKeyboardInt, 0x08, 0x00, K_IDT_TA_INTERRUPT);
+    idtCreateEntry(0x80, (uint64_t)_iReq128, requestTimer, 0x08, 0x00, K_IDT_TA_INTERRUPT_USER);
 }
 
 k_thread_state *interruptHandler(k_thread_state *rsp)
