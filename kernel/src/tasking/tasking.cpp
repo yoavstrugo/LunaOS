@@ -64,7 +64,7 @@ k_process *taskingCreateProcess()
     return process;
 }
 
-void taskingInitalizeThreadMemory(k_thread *thread, THREAD_PRIVILEGE privilege)
+void taskingInitializeThreadMemory(k_thread *thread, THREAD_PRIVILEGE privilege)
 {
     if (privilege == KERNEL)
     {
@@ -78,13 +78,13 @@ void taskingInitalizeThreadMemory(k_thread *thread, THREAD_PRIVILEGE privilege)
         thread->stack.start = thread->process->processAllocator->allocateStack(USERSPACE_STACK_SIZE, false);
         thread->stack.end = thread->stack.start + USERSPACE_STACK_SIZE;
         thread->interruptStack.start = thread->process->processAllocator->allocateInterruptStack(INTERRUPT_STACK_SIZE);
-        thread->interruptStack.end = thread->interruptStack.start + USERSPACE_STACK_SIZE;
+        thread->interruptStack.end = thread->interruptStack.start + INTERRUPT_STACK_SIZE;
     }
 
     // The context of the thread is on the top of the stack (stack is going downwards - end is the top)
     thread->context = (k_thread_state *)(thread->stack.end - sizeof(k_thread_state));
     // Stack always start at the topmost address and goes down
-    // thread->context->rbp = thread->stack.end;
+    thread->context->rbp = thread->stack.end; // TODO: this might cause a problem
     // Set the stack pointer of the thread
     thread->context->rsp = (register_t)thread->context;
 }
@@ -116,7 +116,7 @@ k_thread *taskingCreateThread(virtual_address_t entryPoint, k_process *process, 
 
     pagingSwitchSpace(thread->process->addressSpace);
 
-    taskingInitalizeThreadMemory(thread, privilege);
+    taskingInitializeThreadMemory(thread, privilege);
     // Set the IP for the thread
     thread->context->rip = entryPoint;
 
@@ -188,7 +188,7 @@ void taskingSetupPrivileges(k_thread *thread)
         thread->context->gs = 0x10 | 0;
         thread->context->fs = 0x10 | 0;
         thread->context->ds = 0x10 | 0;
-        thread->context->rflags |= 0x3000;
+        thread->context->rflags = RFLAGS_IOPL | RFLAGS_ALWAYS_ON;
     }
     else if (thread->privilege == USER)
     {
@@ -197,5 +197,6 @@ void taskingSetupPrivileges(k_thread *thread)
         thread->context->gs = 0x20 | 3;
         thread->context->fs = 0x20 | 3;
         thread->context->ds = 0x20 | 3;
+        thread->context->rflags = RFLAGS_ALWAYS_ON;
     }
 }
