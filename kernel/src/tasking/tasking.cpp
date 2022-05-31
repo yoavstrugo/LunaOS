@@ -84,7 +84,7 @@ void taskingInitalizeThreadMemory(k_thread *thread, THREAD_PRIVILEGE privilege)
     // The context of the thread is on the top of the stack (stack is going downwards - end is the top)
     thread->context = (k_thread_state *)(thread->stack.end - sizeof(k_thread_state));
     // Stack always start at the topmost address and goes down
-    thread->context->rbp = thread->stack.end;
+    // thread->context->rbp = thread->stack.end;
     // Set the stack pointer of the thread
     thread->context->rsp = (register_t)thread->context;
 }
@@ -102,7 +102,9 @@ void taskingAddThreadToProcess(k_thread *thread, k_process *process)
     {
         process->mainThread = thread;
         thread->id = process->pid;
-    } else {
+    }
+    else
+    {
         thread->id = taskingGetProcessor()->getNextID();
     }
 }
@@ -185,6 +187,7 @@ void taskingSetupPrivileges(k_thread *thread)
         thread->context->ss = 0x10 | 0;
         thread->context->gs = 0x10 | 0;
         thread->context->fs = 0x10 | 0;
+        thread->context->ds = 0x10 | 0;
         thread->context->rflags |= 0x3000;
     }
     else if (thread->privilege == USER)
@@ -193,5 +196,6 @@ void taskingSetupPrivileges(k_thread *thread)
         thread->context->ss = 0x20 | 3;
         thread->context->gs = 0x20 | 3;
         thread->context->fs = 0x20 | 3;
+        thread->context->ds = 0x20 | 3;
     }
 }
