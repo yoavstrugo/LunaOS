@@ -23,6 +23,10 @@ isr_wrapper:
     push fs
     push gs
 
+    xor rax, rax
+    mov ax, ds
+    push rax
+
     ; Switch to kernel space
     mov eax, 0x10 ; 0x10 is the kernel space in GDT
     mov ds, eax
@@ -35,6 +39,12 @@ isr_wrapper:
     mov rdi, rsp
     call interruptHandler
     mov rsp, rax
+
+    pop rax
+    mov ds ,ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
 
     ; Retrieve Segments
     pop gs
