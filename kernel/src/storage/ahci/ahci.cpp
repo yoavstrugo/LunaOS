@@ -8,12 +8,12 @@
 
 #include <strings.hpp>
 
-k_ahci_driver::k_ahci_driver(k_pci_device_hdr *pciBaseAddress)
+k_ahci_driver::k_ahci_driver(PCICommonConfig *pciBaseAddress)
 {
     this->pciBaseAddress = pciBaseAddress;
     logInfon("%! AHCI Driver instance initalized.", "[AHCI Driver]");
 
-    physical_address_t physABAR = ((k_pci_header0 *)pciBaseAddress)->BAR5;
+    physical_address_t physABAR = pciBaseAddress->u.type0.baseAddresses[5];
     virtual_address_t virtABAR = virtualAddressRangeAllocator.allocateRange(1, "ahci");
     if (virtABAR == NULL)
         kernelPanic("%! Couldn't allocated address for ABAR.", "[AHCI Driver]");

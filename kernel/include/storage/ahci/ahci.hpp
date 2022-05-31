@@ -487,7 +487,7 @@ struct k_ahci_port
 struct k_ahci_driver{
 private:
     k_HBA_mem *ABAR;
-    k_pci_device_hdr *pciBaseAddress;
+    PCICommonConfig *pciBaseAddress;
     k_ahci_port *ports[32];
     uint8_t portCount;
     virtual_address_t portsBase;
@@ -496,7 +496,7 @@ private:
     void probePorts();
 
 public:
-    k_ahci_driver(k_pci_device_hdr *pciBaseAddress);
+    k_ahci_driver(PCICommonConfig *pciBaseAddress);
 
     bool initialize(uint8_t drive);
 
