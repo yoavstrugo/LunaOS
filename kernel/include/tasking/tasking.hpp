@@ -31,6 +31,8 @@ enum THREAD_PRIVILEGE
 };
 
 struct k_thread_state {
+    register_t ds;
+
     register_t gs;
     register_t fs;
 
