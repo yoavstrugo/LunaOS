@@ -59,11 +59,11 @@ void acpiInitialize(stivale2_struct *bootInfo)
         madtParse(madtHeader);
 
     // Parse MCFG
-    k_acpi_sdt_hdr *mcfgHeader = acpiGetEntryWithSignature("MCFG");
-    if (!mcfgHeader)
-        logWarnn("%! Couldn't find MCFG.", "[ACPI]");
-    else 
-        mcfgParse(mcfgHeader);
+    // k_acpi_sdt_hdr *mcfgHeader = acpiGetEntryWithSignature("MCFG");
+    // if (!mcfgHeader)
+    //     logWarnn("%! Couldn't find MCFG.", "[ACPI]");
+    // else 
+    //     mcfgParse(mcfgHeader);
 }
 
 uint32_t acpiGetUnmappedSDTLength(physical_address_t sdtAddr)
