@@ -55,7 +55,7 @@ FRESULT scan_files(
 void filesystemInitialize()
 {
 
-    k_pci_device_hdr *ahciDevice = pciGetDevice(0x01, 0x06, 0x01);
+    PCICommonConfig *ahciDevice = pciGetDevice(0x01, 0x06, 0x01);
     mainDriver = new k_ahci_driver(ahciDevice);
 
     logDebugn("Finished creating the mainDriver");

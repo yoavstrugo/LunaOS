@@ -137,6 +137,13 @@ void kernelInitialize(stivale2_struct *stivaleInfo)
     acpiInitialize(stivaleInfo);
 
     interruptsInitialize();
+    
+    k_acpi_sdt_hdr *mcfgHeader = acpiGetEntryWithSignature("MCFG");
+    if (!mcfgHeader)
+        kernelPanic("%! Couldn't find MCFG.", "[ACPI]");
+
+    pciEnumerateDevices((k_mcfg_hdr *)mcfgHeader);
+
 
     schedulerInit();
 
