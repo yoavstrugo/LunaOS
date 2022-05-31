@@ -131,14 +131,19 @@ ELF_LOAD_STATUS elfLoad(char *fileName)
     // Switch to the process' space to map everything
     physical_address_t prevSpace = pagingGetCurrentSpace();
     pagingSwitchSpace(process->addressSpace);
+    uint64_t initialOffset = elfFile.fptr;
     for (int phdrI = 0; phdrI < phdrCout; phdrI++)
     {
         // Load the segments
         
         if (phdrs[phdrI].p_type == PT_LOAD)
         {
+            char segment[phdrs[phdrI].p_filesz];
+            elfFile.fptr = phdrs[phdrI].p_offset;
             process->processAllocator->allocateSegment(phdrs[phdrI].p_vaddr, phdrs[phdrI].p_memsz);
-            f_read(&elfFile, (void *)phdrs[phdrI].p_vaddr, phdrs[phdrI].p_filesz, &readBytes);
+            f_read(&elfFile, (void *)segment, phdrs[phdrI].p_filesz, &readBytes);
+
+            memcpy((void *)phdrs[phdrI].p_vaddr, segment, phdrs[phdrI].p_filesz);
         } else {
             // Skip the segment
             elfFile.fptr += phdrs[phdrI].p_filesz;
