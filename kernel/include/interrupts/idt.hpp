@@ -5,6 +5,7 @@
 #define K_IDT_SIZE 256
 
 #define K_IDT_TA_INTERRUPT 0x8E
+#define K_IDT_TA_INTERRUPT_USER 0xEF
 #define K_IDT_TA_TRAP 0x8F
 
 struct k_idt_descriptor
