@@ -12,125 +12,17 @@
 static k_pci_device_entry *devices;
 static int PCI_REQUESTS = 0;
 
-void pciParseBus(physical_address_t base, uint64_t bus)
-{
-    logDebugn("Checking bus %d", bus);
-    uint64_t offset = bus << 20;
-
-    physical_address_t addr = base + offset;
-    physical_address_t physBusAddr = PAGING_ALIGN_PAGE_DOWN(base + offset);
-    virtual_address_t busAddrAligned = virtualAddressRangeAllocator.allocateRange(1, "pci\0");
-    PCI_REQUESTS++;
-    pagingMapPage(busAddrAligned, physBusAddr);
-
-    virtual_address_t busAddr = busAddrAligned + ((base + offset) - physBusAddr);
-
-    k_pci_device_hdr *deviceHeader = (k_pci_device_hdr *)busAddr;
-
-    if (deviceHeader->deviceId == 0)
-        return; // Invalid device
-    if (deviceHeader->deviceId == 0xFFFF)
-    {
-        pagingUnmapPage(busAddrAligned);
-        virtualAddressRangeAllocator.freeRange(busAddrAligned);
-        PCI_REQUESTS--;
-        return;
-    }
-
-    pagingUnmapPage(busAddrAligned);
-    virtualAddressRangeAllocator.freeRange(busAddrAligned);
-    PCI_REQUESTS--;
-
-    // Each bus has up to 32 devices
-    for (uint64_t device = 0; device < 32; device++)
-    {
-        pciParseDevice(addr, device);
-    }
-}
-
-void pciParseDevice(physical_address_t bus, uint64_t device)
-{
-    logDebugn("\t- Checking device %d", device);
-    uint64_t offset = device << 15;
-
-    physical_address_t addr = bus + offset;
-    physical_address_t physDriveAddr = PAGING_ALIGN_PAGE_DOWN(addr);
-    virtual_address_t deviceAddrAligned = virtualAddressRangeAllocator.allocateRange(1, "pci\0");
-    PCI_REQUESTS++;
-    pagingMapPage(deviceAddrAligned, physDriveAddr);
-
-    virtual_address_t deviceAddr = deviceAddrAligned + ((bus + offset) - physDriveAddr);
-
-    k_pci_device_hdr *deviceHeader = (k_pci_device_hdr *)deviceAddr;
-
-    if (deviceHeader->deviceId == 0)
-        return; // Invalid device
-    if (deviceHeader->deviceId == 0xFFFF)
-    {
-        pagingUnmapPage(deviceAddrAligned);
-        virtualAddressRangeAllocator.freeRange(deviceAddrAligned);
-        PCI_REQUESTS--;
-        return;
-    }
-
-    pagingUnmapPage(deviceAddrAligned);
-    virtualAddressRangeAllocator.freeRange(deviceAddrAligned);
-    PCI_REQUESTS--;
-
-    // Each device has 8 functions
-    for (uint64_t function = 0; function < 8; function++)
-    {
-        pciParseFunction(bus + offset, function);
-    }
-}
-
-// static int count = 0;
-void pciParseFunction(virtual_address_t deviceAddr, uint64_t function)
-{
-    logDebugn("\t\t* Checking function %d", function);
-    uint64_t offset = function << 12;
-
-    physical_address_t physFuncAddr = PAGING_ALIGN_PAGE_DOWN(deviceAddr + offset);
-    virtual_address_t funcAddrAligned = virtualAddressRangeAllocator.allocateRange(1, "pci\0");
-    PCI_REQUESTS++;
-    pagingMapPage(funcAddrAligned, physFuncAddr);
-
-    virtual_address_t funcAddr = funcAddrAligned + ((deviceAddr + offset) - physFuncAddr);
-
-    k_pci_device_hdr *deviceHeader = (k_pci_device_hdr *)funcAddrAligned;
-
-    if (deviceHeader->deviceId == 0)
-        return; // Invalid device
-    if (deviceHeader->deviceId == 0xFFFF)
-    {
-        pagingUnmapPage(funcAddrAligned);
-        virtualAddressRangeAllocator.freeRange(funcAddrAligned);
-        PCI_REQUESTS--;
-        return;
-    }
-
-    // Add it to the list
-    k_pci_device_entry *deviceEntry = new k_pci_device_entry();
-    deviceEntry->device = deviceHeader;
-    deviceEntry->next = devices;
-    devices = deviceEntry;
-
-    // Print
-    k_pci_class_mapping device = pciGetMapping(deviceHeader->mainClass, deviceHeader->subclass, deviceHeader->progIf);
-    logDebugn("%! Device: %s/%s", "[PCI]", device.className, device.subclassName);
-}
-
-k_pci_device_hdr *pciGetDevice(uint8_t classCode,
-                               uint8_t subclassCode,
-                               uint8_t progIf)
+PCICommonConfig *pciGetDevice(uint8_t classCode,
+                              uint8_t subclassCode,
+                              uint8_t progIf)
 {
     k_pci_device_entry *curr = devices;
 
     while (curr)
     {
 
-        if (curr->device->mainClass == classCode &&
-            curr->device->subclass == subclassCode &&
+        if (curr->device->baseClass == classCode &&
+            curr->device->subClass == subclassCode &&
             curr->device->progIf == progIf)
             return curr->device;
 
@@ -138,4 +30,81 @@ k_pci_device_hdr *pciGetDevice(uint8_t classCode,
     }
 
     return NULL;
+}
+
+void pciEnumerateDevices(k_mcfg_hdr *mcfgHeader)
+{
+    int entryCount = ((mcfgHeader->header.length) - sizeof(k_mcfg_hdr)) / sizeof(k_mcfg_entry);
+
+    for (int i = 0; i < entryCount; i++)
+    {
+        k_mcfg_entry *entry = (k_mcfg_entry *)((uint64_t)mcfgHeader + sizeof(k_mcfg_hdr) + i * sizeof(k_mcfg_entry));
+
+        physical_address_t physicalBase = entry->baseAddress;
+        virtual_address_t virtualBase = virtualAddressRangeAllocator.allocateRange(256 * 32 * 8, "pci\0");
+
+        for (int offset = 0; offset < (256 * 32 * 8) * PAGE_SIZE; offset += PAGE_SIZE)
+            pagingMapPage(virtualBase + offset, physicalBase + offset);
+
+        for (uint8_t bus = entry->startBusNumber; i < entry->endBusNumber; i++)
+        {
+            uint64_t offset = (bus - entry->startBusNumber) << 20;
+
+            virtual_address_t virtAddr = virtualBase + offset;
+
+            // Now virtAddr should point to the configuration space
+            PCICommonConfig *commonConfig = (PCICommonConfig *)virtAddr;
+            if (commonConfig->deviceID == 0xFFFF ||
+                commonConfig->deviceID == 0x0000)
+                continue;
+
+            // 32 devices per bus
+            for (uint8_t device = 0; device < 32; device++)
+            {
+                offset =
+                    (((bus - entry->startBusNumber) << 20) | (device << 15));
+
+                virtAddr = virtualBase + offset;
+
+                // Now virtAddr should point to the configuration space
+                commonConfig = (PCICommonConfig *)virtAddr;
+                if (commonConfig->deviceID == 0xFFFF ||
+                    commonConfig->deviceID == 0x0000)
+                    continue;
+
+                // 8 functions per device
+                for (uint8_t function = 0; function < 8; function++)
+                {
+                    uint64_t offset =
+                        (((bus - entry->startBusNumber) << 20) | (device << 15) | (function << 12));
+
+                    virtual_address_t virtAddr = virtualBase + offset;
+
+                    // Now virtAddr should point to the configuration space
+                    PCICommonConfig *commonConfig = (PCICommonConfig *)virtAddr;
+                    if (commonConfig->deviceID == 0xFFFF ||
+                        commonConfig->deviceID == 0x0000)
+                        continue;
+
+                    k_pci_device_entry *device = new k_pci_device_entry();
+                    device->physicalAddress = physicalBase + offset;
+                    device->next = devices;
+                    devices = device;
+                }
+            }
+        }
+
+        virtualAddressRangeAllocator.freeRange(virtualBase);
+        for (int offset = 0; offset < (256 * 32 * 8) * PAGE_SIZE; offset += PAGE_SIZE)
+            pagingUnmapPage(virtualBase + offset);
+    }
+
+    k_pci_device_entry *device = devices;
+    while (device)
+    {
+        device->device = (PCICommonConfig *)virtualAddressRangeAllocator.allocateRange(1, "pci\0");
+        pagingMapPage((virtual_address_t)device->device, device->physicalAddress);
+
+        device = device->next;
+    }
 }
