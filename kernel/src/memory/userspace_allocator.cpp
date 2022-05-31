@@ -212,7 +212,7 @@ virtual_address_t k_userspace_allocator::allocateStack(uint64_t stackSize, bool 
     logDebugn("%! Allocated stack starting at 0x%64x with size %m", "[Userspace Allocator]", stackPtr, PAGING_ALIGN_PAGE_UP(stackSize));
     #endif
 
-    return stackPtr;
+    return stackPtr - sizeof(uint64_t);
 }
 
 virtual_address_t k_userspace_allocator::allocateInterruptStack(uint64_t stackSize)
@@ -246,7 +246,7 @@ virtual_address_t k_userspace_allocator::allocateInterruptStack(uint64_t stackSi
     logDebugn("%! Allocated interrupt stack starting at 0x%64x with size %m", "[Userspace Allocator]", stackPtr, PAGING_ALIGN_PAGE_UP(stackSize));
     #endif
 
-    return stackPtr;
+    return stackPtr - sizeof(uint64_t);
 }
 
 void k_userspace_allocator::allocateSegment(virtual_address_t start, uint64_t size) {
@@ -258,7 +258,7 @@ void k_userspace_allocator::allocateSegment(virtual_address_t start, uint64_t si
     for (uint64_t page = 0; page < pages; page++)
     {
         physical_address_t phys = memoryPhysicalAllocator.allocatePage();
-        pagingMapPageInSpace(start + page * PAGE_SIZE, phys, this->pml4Physical);
+        pagingMapPageInSpace(start + page * PAGE_SIZE, phys, this->pml4Physical, USERSPACE_DEFAULT_PAGING_FLAGS);
     }
     
     memset((char *)startAligned, 0, pages * PAGE_SIZE);
