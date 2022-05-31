@@ -35,7 +35,11 @@ void exceptionPageFault(uint64_t code)
     bool SS = code & 1 << 6;
     bool HLAT = code & 1 << 7;
     bool SGX = code & 1 << 15;
-    kernelPanic("%! A page fault has occurred with code %d!\
+    virtual_address_t relevantAddress;
+    // The address the page fault has occurred at is in CR2
+    asm volatile ("mov %[aRelevantAddress], cr2" : [aRelevantAddress]"=r"(relevantAddress));
+
+    kernelPanic("%! A page fault has occurred with code %d on address 0x%64x!\
     \n\t- Reason: %s\
     \n\t- When: %s\
     \n\t- Who: %s\
@@ -45,7 +49,7 @@ void exceptionPageFault(uint64_t code)
     \n\t- Shadow Stack? %s\
     \n\t- During HLAT? %s\
     \n\t- SGX Related? %s", 
-    "Memory Exception:", code,
+    "Memory Exception:", code, relevantAddress,
     P ? "Page-level protection violation" : "Non-present page access",
     WR ? "During write" : "During read",
     US ? "User-mode" : "Supervisor-mode",
