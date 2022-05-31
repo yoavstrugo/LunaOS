@@ -209,35 +209,45 @@ physical_address_t pagingUnmapPageInSpace(virtual_address_t virt, physical_addre
                     UNSET_FLAG(pte, PAGE_PRESENT);
                     pt[PT_INDEXER(virt)] = pte;
 
+                    memset(&pt[PT_INDEXER(virt)], 0, sizeof(pagetable_entry_t));
+
                     // Check if PT is empty now
                     if (pagingIsPagetableEmpty(pt))
                     {
                         // Free the PT space
+                        memset((void *)pt, 0, PAGE_SIZE);
                         memoryPhysicalAllocator.freePage(ADDRESS_EXCLUDE(pde));
 
                         // Unset the PRESENT bit in the PD entry
                         UNSET_FLAG(pde, PAGETABLE_PRESENT);
                         pd[PD_INDEXER(virt)] = pde;
 
+                        memset(&pd[PD_INDEXER(virt)], 0, sizeof(pagetable_entry_t));
+
                         // Check if PD is empty now
                         if (pagingIsPagetableEmpty(pd))
                         {
                             // Free the PD space
+                            memset((void *)pd, 0, PAGE_SIZE);
                             memoryPhysicalAllocator.freePage(ADDRESS_EXCLUDE(pdpte));
 
                             // Unset the PRESENT bit in the PDPT entry
                             UNSET_FLAG(pdpte, PAGETABLE_PRESENT);
                             pdpt[PDPT_INDEXER(virt)] = pdpte;
 
+                            memset(&pdpt[PD_INDEXER(virt)], 0, sizeof(pagetable_entry_t));
+
                             // Check if PDPT is empty now
                             if (pagingIsPagetableEmpty(pdpt))
                             {
                                 // Free the PDPT space
+                                memset((void *)pdpt, 0, PAGE_SIZE);
                                 memoryPhysicalAllocator.freePage(ADDRESS_EXCLUDE(pml4e));
 
                                 // Unset the PRESENT bit in the PML4 entry
                                 UNSET_FLAG(pml4e, PAGETABLE_PRESENT);
                                 pml4[PML4_INDEXER(virt)] = pml4e;
+                                memset(&pml4[PML4_INDEXER(virt)], 0, sizeof(pagetable_entry_t));
                             }
                         }
                     }
