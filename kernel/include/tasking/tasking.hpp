@@ -30,7 +30,30 @@ enum THREAD_PRIVILEGE
     USER
 };
 
-struct k_thread_state {
+enum RFLAGS_REGISTER
+{
+    RFLAGS_CF = 0x00000001,        // Carry flag
+    RFLAGS_ALWAYS_ON = 0x00000002, // Reserved, always 1 in EFLAGS
+    RFLAGS_PF = 0x00000004,        // Parity flag
+    RFLAGS_AF = 0x00000010,        // Adjust Flag
+    RFLAGS_ZF = 0x00000040,        // Zero flag
+    RFLAGS_SF = 0x00000080,        // Sign flag
+    RFLAGS_TF = 0x00000100,        // Trap flag (single step)
+    RFLAGS_IF = 0x00000200,        // Interrupt enable flag
+    RFLAGS_DF = 0x00000400,        // Direction flag
+    RFLAGS_OF = 0x00000800,        // Overflow flag
+    RFLAGS_IOPL = 0x00003000,      // I/O privilege level
+    RFLAGS_NT = 0x00004000,        // Nested task flag
+    RFLAGS_RF = 0x00010000,        // Resume flag
+    RFLAGS_VM = 0x00020000,        // Virtual 8086 mode flag
+    RFLAGS_AC = 0x00040000,        // Alignment check
+    RFLAGS_VIF = 0x00080000,       // Virtual interrupt flag
+    RFLAGS_VIP = 0x00100000,       // Virtual interrupt pending
+    RFLAGS_ID = 0xFFC00000         // Able to use CPUID instruction
+};
+
+struct k_thread_state
+{
     register_t ds;
 
     register_t gs;
@@ -63,7 +86,7 @@ struct k_thread_state {
     register_t rflags;
     register_t rsp;
     register_t ss;
-}__attribute__((packed));
+} __attribute__((packed));
 
 struct k_thread
 {
@@ -107,7 +130,8 @@ struct k_thread
     k_thread_state *context;
 
     // If this thread is a syscall
-    struct {
+    struct
+    {
         syscall_handler_t handler;
         void *data;
         k_thread *targetThread;
@@ -171,44 +195,44 @@ struct k_processor_tasking
 
     /**
      * @brief Returns the next PID for process
-     * 
+     *
      * @return uint64_t The PID
      */
     uint64_t getNextID();
 
-    private:
-        /**
-         * @brief The next process' id
-         */
-        uint64_t nextPID;
+private:
+    /**
+     * @brief The next process' id
+     */
+    uint64_t nextPID;
 };
 
 void taskingDumpProcesses();
 
 /**
  * @brief Initialize tasking
- * 
+ *
  * @param numOfCPUs How many cpus aer in the PC
  */
 void taskingInitialize(uint8_t numOfCPUs);
 
 /**
  * @brief Use the scheduler to decide the next process to run and does a context switch
- * 
+ *
  */
 void taskingSwitch();
 
 /**
  * @brief Returns the currently running thread
- * 
+ *
  * @return k_thread* The running thread
  */
 k_thread *taskingGetRunningThread();
 
 /**
  * @brief Add a CPU to the list
- * 
- * @param id The id of the CPU  
+ *
+ * @param id The id of the CPU
  */
 void taskingAddCPU(uint8_t id);
 
@@ -231,14 +255,14 @@ k_thread *taskingCreateThread(virtual_address_t entryPoint, k_process *process, 
 
 /**
  * @brief Returns the current processor
- * 
+ *
  * @return k_processor_tasking* The processor's tasking structure
  */
 k_processor_tasking *taskingGetProcessor();
 
 /**
  * @brief Sets up all the privileges required for a thread base on its privilege field
- * 
+ *
  * @param thread The thread
  */
 void taskingSetupPrivileges(k_thread *thread);
