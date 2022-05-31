@@ -6,7 +6,7 @@
 
 k_gdt_descriptor gdtDescriptor;
 k_gdt gdt;
-k_tss tss;
+TSS tss;
 
 void gdtCreateEntry(uint8_t idx, uint32_t base, uint32_t limit, uint8_t accessByte, uint8_t flags)
 {
@@ -22,7 +22,7 @@ void gdtCreateTSSEntry()
 {
     uint64_t base = ((uint64_t)&tss);
 
-    gdt.tss.limitLow        = (uint16_t) (sizeof(k_tss)) - 1;
+    gdt.tss.limitLow        = (uint16_t) (sizeof(TSS)) - 1;
     gdt.tss.baseLow         = (uint16_t) (base & 0xFFFF);
     gdt.tss.baseMid0        = (uint16_t) ((base >> 16) & 0xFF);
     gdt.tss.accessByte      = (uint8_t)  0x89; // Present - 0x80, type - 0x9
@@ -42,9 +42,8 @@ void gdtInitialize()
     gdtCreateEntry(4, (uint32_t)0x0, 0xFFFFF, 0xF2, 0xC); // user data
 
     // TSS
-    gdtCreateTSSEntry();
-    memset((char *)&tss, 0, sizeof(tss));
-    
+    gdt.tss.set((uint64_t)&tss, sizeof(TSS) - 1, 0x0, DPL_KERNEL_ACCESS);
+        
     // Set the descriptor
     gdtDescriptor.size = sizeof(gdt) - 1;
     gdtDescriptor.offset = (uint64_t)&gdt;
@@ -61,6 +60,6 @@ void gdtInitialize()
 
 
 void gdtSetActiveStack(virtual_address_t stackPtr) {
-    tss.ist[0] = stackPtr;
-    tss.rsp[0] = stackPtr;
+    tss.rsp0Low = stackPtr & 0xFFFFFFFF;
+    tss.rsp0High = (stackPtr >> 32) & 0xFFFFFFFF;
 }
