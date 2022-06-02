@@ -56,6 +56,8 @@ void filesystemInitialize()
 {
 
     PCICommonConfig *ahciDevice = pciGetDevice(0x01, 0x06, 0x01);
+    if (ahciDevice == NULL)
+        kernelPanic("AHCI is wrong (address null)");
     mainDriver = new k_ahci_driver(ahciDevice);
 
     logDebugn("Finished creating the mainDriver");
@@ -69,7 +71,7 @@ void filesystemInitialize()
     if (res == FR_NO_FILESYSTEM)
     {
         // Create filesystem
-        res = f_mkfs("0:", 0, work, sizeof(work));
+        res = f_mkfs("", 0, work, sizeof(work));
         if (res == FR_OK)
             logDebugn("%! Created filesystem", "[Filesystem]", res);
         else
