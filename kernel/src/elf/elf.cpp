@@ -79,24 +79,32 @@ ELF_LOAD_STATUS elfLoad(char *fileName)
     // First open the file
     FIL elfFile;
     FRESULT res;
+
+
     if ((res = f_open(&elfFile, fileName, FA_READ)) != FR_OK)
     {
         return FAILED_TO_OPEN;
     }
 
-    // Validate the file
-    Elf64_Ehdr elfHeader;
     unsigned int readBytes;
-    if ((res = f_read(&elfFile, &elfHeader, sizeof(Elf64_Ehdr), &readBytes)) != FR_OK)
+    uint64_t fileSize = f_size(&elfFile);
+    char fileBuffer[f_size(&elfFile)];
+    res = f_read(&elfFile, (void *)fileBuffer, fileSize, &readBytes);
+
+    // Validate the file
+    if (res != FR_OK)
     {
         f_close(&elfFile);
         return FAILED_TO_READ;
     }
-    if (readBytes != sizeof(Elf64_Ehdr))
+    if (readBytes != fileSize)
     {
         f_close(&elfFile);
         return FAILED_TO_READ;
     }
+
+    Elf64_Ehdr elfHeader;
+    memcpy(&elfHeader, fileBuffer, sizeof(Elf64_Ehdr));
 
     if (!elfCheckFile(&elfHeader))
     {
@@ -116,38 +124,40 @@ ELF_LOAD_STATUS elfLoad(char *fileName)
 
     // Read all the program headers
     Elf64_Phdr phdrs[phdrCout];
-    if ((res = f_read(&elfFile, phdrs, phdrCout * phdrSize, &readBytes)) != SUCCESS)
-    {
-        f_close(&elfFile);
-        return FAILED_TO_READ;
-    }
-    if (readBytes != phdrCout * phdrSize)
-    {
-        f_close(&elfFile);
-        return FAILED_TO_READ;
-    }
+    memcpy(phdrs, &fileBuffer[phdrOff], sizeof(phdrs));
+    // if ((res = f_read(&elfFile, phdrs, phdrCout * phdrSize, &readBytes)) != SUCCESS)
+    // {
+    //     f_close(&elfFile);
+    //     return FAILED_TO_READ;
+    // }
+    // if (readBytes != phdrCout * phdrSize)
+    // {
+    //     f_close(&elfFile);
+    //     return FAILED_TO_READ;
+    // }
 
     k_process *process = taskingCreateProcess();
     // Switch to the process' space to map everything
     physical_address_t prevSpace = pagingGetCurrentSpace();
     pagingSwitchSpace(process->addressSpace);
-    uint64_t initialOffset = elfFile.fptr;
+    char segment[10000];
+    elfFile.fptr = 0;
+    // f_read(&elfFile, (void *)segment, 10000, &readBytes);
     for (int phdrI = 0; phdrI < phdrCout; phdrI++)
     {
         // Load the segments
         
         if (phdrs[phdrI].p_type == PT_LOAD)
         {
-            char segment[phdrs[phdrI].p_filesz];
-            elfFile.fptr = phdrs[phdrI].p_offset;
+            // elfFile.fptr = phdrs[phdrI].p_offset;
             process->processAllocator->allocateSegment(phdrs[phdrI].p_vaddr, phdrs[phdrI].p_memsz);
-            f_read(&elfFile, (void *)segment, phdrs[phdrI].p_filesz, &readBytes);
-
-            memcpy((void *)phdrs[phdrI].p_vaddr, segment, phdrs[phdrI].p_filesz);
-        } else {
-            // Skip the segment
-            elfFile.fptr += phdrs[phdrI].p_filesz;
-        }
+            
+            memcpy((void *)phdrs[phdrI].p_vaddr, &fileBuffer[phdrs[phdrI].p_offset], phdrs[phdrI].p_filesz);
+        } 
+        // else {
+        //     // Skip the segment
+        //     elfFile.fptr += phdrs[phdrI].p_filesz;
+        // }
     }
     pagingSwitchSpace(prevSpace);
 
