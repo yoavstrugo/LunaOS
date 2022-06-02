@@ -100,6 +100,7 @@ struct k_thread
     // The thread's status
     THREAD_STATUS status;
 
+    // The privilage of the thread KERNEL/USER
     THREAD_PRIVILEGE privilege;
 
     /**

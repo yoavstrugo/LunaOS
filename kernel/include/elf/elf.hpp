@@ -147,5 +147,11 @@ enum ELF_LOAD_STATUS
     UNSUPPORTED_ELF = 4
 };
 
+/**
+ * @brief Loads an ELF file and create a process with thread which executes it
+ * 
+ * @param fileName The path to the ELF file
+ * @return ELF_LOAD_STATUS The status of the loading
+ */
 ELF_LOAD_STATUS
-elfLoad(char *fileName);
+    elfLoad(char *fileName);

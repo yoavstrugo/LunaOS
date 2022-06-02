@@ -18,4 +18,5 @@ void ioOutByte(uint16_t port, uint8_t value);
  */
 uint8_t ioInByte(uint16_t port);
 
+
 void ioWait();

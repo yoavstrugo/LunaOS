@@ -12,8 +12,8 @@ struct PSF_header
     uint32_t flags;      /* 0 if there's no unicode table */
     uint32_t length;     /* number of glyphs */
     uint32_t charsize;   /* size of each glyph */
-    uint32_t height;     /* height in pixels */
-    uint32_t width;      /* width in pixels */
+    uint32_t height;     /* height of each glyph in pixels */
+    uint32_t width;      /* width of each glyph in pixels */
 };
 
 class PSF_Font

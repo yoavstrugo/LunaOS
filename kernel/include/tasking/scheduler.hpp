@@ -18,19 +18,28 @@ typedef uint8_t job_priority_t;
 
 struct k_scheduler_job
 {
+    // The thread that this job relates to
     k_thread *thread;
+    // The priority of the job
     job_priority_t priority;
+    // The time of the job in the current priority
     uint64_t timeInPriority;
 
+    // The previous job in the double-linked list
     k_scheduler_job *prev;
+    // The next job in the double-linked list
     k_scheduler_job *next;
 };
 
 struct k_jobs_queue
 {
+    // The head of the queue
     k_scheduler_job *head;
+    // The tail of the queue
     k_scheduler_job *tail;
+    // Time limit for a job in the queue
     uint64_t timeAllotment;
+    // Is the queue empty?
     bool isEmpty;
 };
 

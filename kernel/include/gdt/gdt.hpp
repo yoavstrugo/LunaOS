@@ -71,6 +71,14 @@ struct TSSDescriptor
 
     uint32_t reserved;
 
+    /**
+     * @brief Set the vakues of the TSS descriptor
+     * 
+     * @param base 
+     * @param limit 
+     * @param flags 
+     * @param access 
+     */
     void set(uint64_t base, uint64_t limit, uint8_t flags, uint8_t access)
     {
         limitLow = (uint16_t)(limit & 0xFFFF);
