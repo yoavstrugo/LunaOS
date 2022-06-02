@@ -26,10 +26,12 @@
 #include <system/acpi/acpi.hpp>
 #include <system/acpi/madt.hpp>
 
+#include <system/processor/processor.hpp>
+
 #include <tasking/tasking.hpp>
 #include <tasking/scheduler.hpp>
 
-#include <syscalls/syscalls_tasking.hpp>
+#include <syscalls/syscalls.hpp>
 
 #include <fatfs/ff.h>
 
@@ -39,6 +41,8 @@
 
 #include <filesystem.hpp>
 #include <elf/elf.hpp>
+
+#include <logger/printf.hpp>
 
 // We need to tell the stivale bootloader where we want our stack to be.
 // We are going to allocate our stack as an array in .bss.
@@ -71,7 +75,6 @@ static stivale2_header_tag_smp smp_hdr_tag{
         .identifier = STIVALE2_HEADER_TAG_SMP_ID,
         .next = (uint64_t)&framebuffer_hdr_tag},
     .flags = 1UL};
-
 
 // The stivale2 specification says we need to define a "header structure".
 // This structure needs to reside in the .stivale2hdr ELF section in order
@@ -113,6 +116,8 @@ extern "C" void kernelMain(stivale2_struct *stivale2Struct)
 void threadProgram()
 {
     logInfon("%! THREAD IS RUNNING!", "[THREAD]");
+    asm volatile("mov rax, 0x0\n\
+                    int 0x80");
 }
 
 void userthreadMain()
@@ -136,14 +141,16 @@ void kernelInitialize(stivale2_struct *stivaleInfo)
 
     acpiInitialize(stivaleInfo);
 
+    if(!processorEnableSSE())
+        kernelPanic("SSE is not available on this processor!");
+
     interruptsInitialize();
-    
+
     k_acpi_sdt_hdr *mcfgHeader = acpiGetEntryWithSignature("MCFG");
     if (!mcfgHeader)
         kernelPanic("%! Couldn't find MCFG.", "[ACPI]");
 
     pciEnumerateDevices((k_mcfg_hdr *)mcfgHeader);
-
 
     schedulerInit();
 
@@ -152,18 +159,30 @@ void kernelInitialize(stivale2_struct *stivaleInfo)
 
     filesystemInitialize();
 
-    ELF_LOAD_STATUS status;
-    if((status = elfLoad("root/apps/main.elf")) == SUCCESS)
-        logInfon("SUCCESS");
-    else 
-        logInfon("FAILED %d", status);
+    syscallInitialize();
 
+    double t = 3.01;
+    double v = 5.444;
+
+    double s = t + v;
+    char buf[10];
+    sprintf(buf, "%f", s);
+
+    logInfon("%s", buf);
+
+    // ELF_LOAD_STATUS status;
+    // if ((status = elfLoad("root/apps/main.elf")) == SUCCESS)
+    //     logInfon("SUCCESS");
+    // else
+    //     logInfon("FAILED %d", status);
+
+    
 
     // k_process *proc = taskingCreateProcess();
     // taskingCreateProcess();
     // taskingCreateThread((virtual_address_t)threadProgram, proc, KERNEL);
 
-    lapicStartTimer();
+    // lapicStartTimer();
 }
 
 void kernelPanic(const char *msg, ...)
