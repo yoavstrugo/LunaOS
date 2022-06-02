@@ -17,7 +17,8 @@ void syscallHandle(k_thread *thread)
     // The data for the system call will be stored on rbx
     void *syscallData = (void *)thread->context->rbx;
 
-    syscallRun(thread, systemCalls[thread->context->rax], syscallData);
+    // syscallRun(thread, systemCalls[thread->context->rax], syscallData);
+    systemCalls[syscallId](thread, syscallData);
 }
 
 void syscallRun(k_thread *caller, syscall_handler_t syscall, void *data)
@@ -31,7 +32,7 @@ void syscallRun(k_thread *caller, syscall_handler_t syscall, void *data)
     syscallThread->syscall.handler = syscall;
     syscallThread->syscall.data = data;
     syscallThread->syscall.targetThread = caller;
-    // TODO: ?syscallThread->context.rip = (register_t)syscallThread;
+    syscallThread->context->rip = (register_t)syscallThread;
 }
 
 void syscallThread()
@@ -62,8 +63,8 @@ void syscallRegister(uint16_t id, syscall_handler_t handler)
     systemCalls[id] = handler;
 }
 
-void syscallPrintToScreen(k_thread *thread, int *data) {
-    logInfo("%d", *data);
+void syscallPrintString(k_thread *thread, char *data) {
+    logInfo("%s", data);
 }
 
 void syscallInitialize()
@@ -72,5 +73,5 @@ void syscallInitialize()
     memset((char *)systemCalls, 0, sizeof(systemCalls));
 
     syscallRegister(SYSTEMCALL_EXIT, (syscall_handler_t)syscallExit);
-    syscallRegister(1, (syscall_handler_t)syscallPrintToScreen);
+    syscallRegister(1, (syscall_handler_t)syscallPrintString);
 }
