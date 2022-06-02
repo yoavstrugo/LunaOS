@@ -8,7 +8,7 @@
 #include <memory/paging.hpp>
 #include <system/pit.hpp>
 #include <interrupts/interrupts.hpp>
-#include <system/processor.hpp>
+#include <system/processor/processor.hpp>
 
 
 virtual_address_t lapicGlobalAddress = NULL;
@@ -27,7 +27,7 @@ void lapicPrepare(physical_address_t lapicAddress)
     if (!lapicVirtAddress)
         kernelPanic("%! Couldn't get a virtual address for the global Local APIC physical address.", "[LAPIC]");
 
-    bool apicEnabled = check_apic();
+    bool apicEnabled = processorHasAPIC();
 
     if (!apicEnabled)
         kernelPanic("%! APIC is not enabled on this processor!", "[APIC]");
