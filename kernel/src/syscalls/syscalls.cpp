@@ -62,10 +62,15 @@ void syscallRegister(uint16_t id, syscall_handler_t handler)
     systemCalls[id] = handler;
 }
 
+void syscallPrintToScreen(k_thread *thread, int *data) {
+    logInfo("%d", *data);
+}
+
 void syscallInitialize()
 {
     // Set everything to null
     memset((char *)systemCalls, 0, sizeof(systemCalls));
 
     syscallRegister(SYSTEMCALL_EXIT, (syscall_handler_t)syscallExit);
+    syscallRegister(1, (syscall_handler_t)syscallPrintToScreen);
 }

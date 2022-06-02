@@ -153,7 +153,7 @@ void kernelInitialize(stivale2_struct *stivaleInfo)
     filesystemInitialize();
 
     ELF_LOAD_STATUS status;
-    if((status = elfLoad("root/apps/testapp.elf")) == SUCCESS)
+    if((status = elfLoad("root/apps/main.elf")) == SUCCESS)
         logInfon("SUCCESS");
     else 
         logInfon("FAILED %d", status);
