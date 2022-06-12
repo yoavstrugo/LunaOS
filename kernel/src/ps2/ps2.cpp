@@ -159,7 +159,8 @@ namespace PS2
                 if (focusedProcess != NULL) {
                     FIL *stdin = focusedProcess->fileDescriptors->get(0);
                     unsigned int byteWritten;
-                    f_write(stdin, &QWERTY::scancode1[key], 1, &byteWritten);
+                    FRESULT res  = f_write(stdin, &QWERTY::scancode1[key], 1, &byteWritten);
+                    res = res;
                 }
             }
     }

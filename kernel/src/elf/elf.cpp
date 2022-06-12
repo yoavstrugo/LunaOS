@@ -76,7 +76,7 @@ elf64Hash(const unsigned char *name)
     return h;
 }
 
-ELF_LOAD_STATUS elfLoad(char *fileName, const char * name, k_process *proc)
+ELF_LOAD_STATUS elfLoad(char *fileName, const char * name, k_process **proc)
 {
     // First open the file
     FIL elfFile;
@@ -175,6 +175,7 @@ ELF_LOAD_STATUS elfLoad(char *fileName, const char * name, k_process *proc)
 
     // Create the process' main thread
     k_thread *thread = taskingCreateThread(elfHeader.e_entry, process, USER);
+    *proc = process;
 
     return SUCCESS;
 }

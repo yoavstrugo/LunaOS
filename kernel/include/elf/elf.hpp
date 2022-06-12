@@ -155,4 +155,4 @@ enum ELF_LOAD_STATUS
  * @return ELF_LOAD_STATUS The status of the loading
  */
 ELF_LOAD_STATUS
-elfLoad(char *fileName, const char *name, k_process *proc);
+elfLoad(char *fileName, const char *name, k_process **proc);
