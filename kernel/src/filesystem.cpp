@@ -62,7 +62,6 @@ void filesystemInitialize()
 
     logDebugn("Finished creating the mainDriver");
 
-    FIL fil;
     FRESULT res;
     uint64_t bw;
     uint8_t work[FF_MAX_SS];
@@ -83,39 +82,16 @@ void filesystemInitialize()
     }
 
     FILINFO fn;
-    res = f_stat("root", &fn);
-    if (res == FR_NO_FILE)
-    {
-        f_mkdir("root");
-        logDebugn("%! Created root directory", "[Filesystem]", res);
-    }
-    else
-    {
-        logDebugn("%! root was already created", "[Filesystem]", res);
-    }
+    f_mkdir("root");
+    f_mkdir("root/apps");
+    f_mkdir("root/docs");
+    f_mkdir("root/dev");
+    
+    FIL fil;
 
-    res = f_stat("root/docs", &fn);
-    if (res == FR_NO_FILE)
-    {
-        f_mkdir("root/docs");
-        logDebugn("%! Created root/docs directory", "[Filesystem]", res);
-    }
-    else if (res == FR_OK)
-    {
-        logDebugn("%! root/docs was already created", "[Filesystem]", res);
-    }
-    res = f_stat("root/apps", &fn);
-    if (res == FR_NO_FILE)
-    {
-        f_mkdir("root/apps");
-        logDebugn("%! Created root/apps directory", "[Filesystem]", res);
-    }
-    else
-    {
-        logDebugn("%! root/apps was already created", "[Filesystem]", res);
-    }
-
-    char buff[256];
-    memset(buff, 0, 256);
-    scan_files(buff);
+    f_open(&fil, "/root/dev/stdin", FA_OPEN_ALWAYS);
+    f_close(&fil);
+    f_open(&fil, "/root/dev/stdout", FA_OPEN_ALWAYS);
+    f_close(&fil);
+    scan_files("/root");
 }

@@ -9,26 +9,34 @@
 
 k_ioapic_entry *ioapicHead = NULL;
 
-void ioapicAdd(uint8_t id, physical_address_t physcialAddress, uint32_t globalSystemInterruptBase)
+void ioapicAdd(uint8_t id, physical_address_t physicalAddress, uint32_t globalSystemInterruptBase)
 {
     k_ioapic_entry *ioapic = new k_ioapic_entry();
 
-    // Create a mapping for the ioapic entry
-    virtual_address_t virt = virtualAddressRangeAllocator.allocateRange(2, "ioap");
+#ifdef VERBOSE_IOAPIC
+    logDebugn("%! Global system interrupt base is %d", "[IOAPIC]", globalSystemInterruptBase)
+#endif
+
+        // Create a mapping for the ioapic entry
+        virtual_address_t virt = virtualAddressRangeAllocator.allocateRange(2, "ioap");
     if (!virt)
         kernelPanic("%! Couldn't allocate virtual range for mapping", "[IOAPIC]");
 
     for (int i = 0; i < 2; i++)
-        pagingMapPage(virt + i * PAGE_SIZE, PAGING_ALIGN_PAGE_DOWN(physcialAddress) + i * PAGE_SIZE);
+        pagingMapPage(virt + i * PAGE_SIZE, PAGING_ALIGN_PAGE_DOWN(physicalAddress) + i * PAGE_SIZE);
 
-    uint64_t offset = physcialAddress - PAGING_ALIGN_PAGE_DOWN(physcialAddress);
+    uint64_t offset = physicalAddress - PAGING_ALIGN_PAGE_DOWN(physicalAddress);
 
     ioapic->address = virt + offset;
+
+#ifdef VERBOSE_IOAPIC
+    logDebugn("%! Mapped IO/APIC on physical address 0x%64x to virtual 0x%64x", "[IOAPIC]", physicalAddress, ioapic->address);
+#endif
 
     // Validate the ID and change it if needed
     if (id != ioapicRead(ioapic, IOAPIC_ID))
     {
-        logDebugn("%! IOAPIC has wrong ID %d, changing...", "[IOAPIC]", ioapicRead(ioapic, IOAPIC_ID));
+        logWarnn("%! IOAPIC has wrong ID %d, changing...", "[IOAPIC]", ioapicRead(ioapic, IOAPIC_ID));
         // Change the id
         ioapicWrite(ioapic, IOAPIC_ID, id);
     }
@@ -68,7 +76,8 @@ k_ioapic_entry *ioapicGetResponsible(uint32_t source)
 
     while (curr)
     {
-        if (source >= curr->globalSystemInterruptBase && source <= (curr->globalSystemInterruptBase + curr->redtblSize))
+        if (source >= curr->globalSystemInterruptBase &&
+            source <= (curr->globalSystemInterruptBase + curr->redtblSize))
             return curr;
         curr = curr->next;
     }

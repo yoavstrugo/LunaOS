@@ -33,7 +33,7 @@ struct k_userspace_allocator
      */
     void allocateUserspaceHeap();
 
-    void allocateSegment(virtual_address_t start, uint64_t size);
+    bool allocateRange(virtual_address_t start, uint64_t size);
 
     /**
      * @brief Returns the address to the PML4 of this process space

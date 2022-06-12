@@ -1,6 +1,7 @@
 #include <interrupts/exceptions.hpp>
 
 #include <kernel.hpp>
+#include <logger/logger.hpp>
 
 void (*exceptionHandlers[32])(uint64_t);
 
@@ -24,6 +25,23 @@ void exceptionGPFault(uint64_t code)
                 (code >> 3) & 0xfff8);
 }
 
+struct stackframe {
+  struct stackframe* rbp;
+  uint64_t rip;
+};
+void TraceStackTrace(unsigned int maxFrames)
+{
+    stackframe *stk;
+    asm ("movq %%rbp,%0" : "=r"(stk) ::);
+    logDebugn("Stack trace:\n");
+    for(unsigned int frame = 0; stk && frame < maxFrames; ++frame)
+    {
+        // Unwind to previous stack frame
+        logDebugn("  0x%64x     \n", stk->rip);
+        stk = stk->rbp;
+    }
+}
+
 void exceptionPageFault(uint64_t code)
 {
     bool P = code  & 1 << 0;
@@ -38,6 +56,8 @@ void exceptionPageFault(uint64_t code)
     virtual_address_t relevantAddress;
     // The address the page fault has occurred at is in CR2
     asm volatile ("mov %[aRelevantAddress], cr2" : [aRelevantAddress]"=r"(relevantAddress));
+
+    // TraceStackTrace(5);
 
     kernelPanic("%! A page fault has occurred with code %d on address 0x%64x!\
     \n\t- Reason: %s\

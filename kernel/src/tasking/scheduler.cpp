@@ -5,6 +5,8 @@
 
 #include <logger/logger.hpp>
 
+#define VERBOSE_SCHEDULER
+
 k_jobs_queue jobsQueues[K_CONST_SCHEDULER_QUEUES];
 k_scheduler_job *runningJob;
 uint64_t priorityBoostTime;
@@ -17,7 +19,7 @@ void schedulerInit()
         jobsQueues[priority].head = NULL;
         jobsQueues[priority].tail = NULL;
         jobsQueues[priority].isEmpty = true;
-        jobsQueues[priority].timeAllotment = schedulerGetTimeAllotment(priority);
+        jobsQueues[priority].timeAllotment = 50;//schedulerGetTimeAllotment(priority);
     }
 
     priorityBoostTime = 0;
@@ -30,10 +32,12 @@ uint64_t schedulerGetTimeAllotment(uint8_t priority)
     if (!initialized)
         return 0;
 
-    return (priority * (K_CONST_MAXIMUM_TIMESLICE - K_CONST_MINIMUM_TIMESLICE) /
+    return ((priority + 1) * (K_CONST_MAXIMUM_TIMESLICE - K_CONST_MINIMUM_TIMESLICE) /
             K_CONST_SCHEDULER_QUEUES) +
            K_CONST_MINIMUM_TIMESLICE;
 }
+
+static uint64_t i = 0;
 
 void schedulerTime()
 {
@@ -43,9 +47,13 @@ void schedulerTime()
     if (runningJob != NULL)
         runningJob->timeInPriority += APIC_TIMER_TIMESLOT_MS;
     priorityBoostTime += APIC_TIMER_TIMESLOT_MS;
-    if (priorityBoostTime > K_CONST_PRIORITY_BOOST)
+    if (priorityBoostTime > K_CONST_PRIORITY_BOOST) {
         schedulerPriorityBoost();
+        priorityBoostTime = 0;
+    }
 }
+
+
 
 k_thread *schedulerSchedule()
 {
@@ -71,9 +79,10 @@ k_thread *schedulerSchedule()
             {
                 // First remove it from the current priority
                 schedulerRemoveJob(runningJob);
+                runningJob->thread->status = READY;
 
                 // Kernel jobs shouldn't be demoted, but only go to the "back of the line"
-                if (runningJob->thread->privilege == USER)
+                if (runningJob->thread->privilege == USER && runningJob->priority < K_CONST_SCHEDULER_QUEUES - 1)
                     // Now add it to one lower priority
                     schedulerAddJob(runningJob, runningJob->priority + 1);
                 else 
@@ -102,11 +111,10 @@ k_thread *schedulerSchedule()
                 if (job->thread->status != DEAD)
                     schedulerAddJob(runningJob, priority);
             }
-
-            logDebugn("\t- Selected job to run");
-            logDebugn("\t\t* Priority %d", priority);
-            logDebugn("\t\t* Parent PID %d", job->thread->process->pid);
-            logDebugn("\t\t* Thread ID %d", job->thread->id);
+            i++;
+#ifdef VERBOSE_SCHEDULER
+            logDebugn("%d) Selected job to run PID: %d TID: %d", i,job->thread->process->pid, job->thread->id);
+#endif
 
             // Round-robin on the highest priority queue
             // Therefore the current job to run is the first job
@@ -128,7 +136,7 @@ void schedulerPriorityBoost()
     for (job_priority_t priority = 0; priority < K_CONST_SCHEDULER_QUEUES - 1; priority++)
     {
         k_scheduler_job *job = jobsQueues[priority].head;
-        while (job->next)
+        while (job)
         {
             // If it's already in priority 0, just set the time to 0
             job->timeInPriority = 0;
@@ -137,6 +145,8 @@ void schedulerPriorityBoost()
                 schedulerRemoveJob(job);
                 schedulerAddJob(job, 0);
             }
+
+            job = job->next;
         }
     }
 }

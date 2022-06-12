@@ -41,6 +41,9 @@ void heapInitialize(virtual_address_t start, virtual_address_t end)
 
 void *heapAllocate(uint64_t size)
 {
+    if (size == 0)
+        return NULL;
+
     if (!heapInitialized)
         kernelPanic("%! An attempt to allocate memory with uninitialized heap has occurred.", "[Kernel Heap]");
 

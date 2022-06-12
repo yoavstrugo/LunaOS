@@ -44,7 +44,10 @@
 			"label": "Copy To Host",
 			"type": "shell",
 			"command": "make copytohost",
-			"problemMatcher": []
+			"problemMatcher": [],
+			"dependsOn": [
+				"Build"
+			],
 		}
 	]
 }

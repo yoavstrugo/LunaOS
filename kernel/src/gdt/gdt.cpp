@@ -41,6 +41,8 @@ void gdtInitialize()
     gdtCreateEntry(3, (uint32_t)0x0, 0xFFFFF, 0xFA, 0xA); // user code
     gdtCreateEntry(4, (uint32_t)0x0, 0xFFFFF, 0xF2, 0xC); // user data
 
+    gdtCreateEntry(5, (uint32_t)0x0, 0xFFFFF, 0xF2, 0xC); // TLS
+
     // TSS
     gdt.tss.set((uint64_t)&tss, sizeof(TSS) - 1, 0x0, DPL_KERNEL_ACCESS);
         
@@ -54,7 +56,7 @@ void gdtInitialize()
 
     _loadGDT(&gdtDescriptor);
     logDebugn("%! has been loaded into GDT register.", "[GDT]");
-    _loadTSS(0x28);
+    _loadTSS(0x30);
     logDebugn("%! loaded TSS.", "[GDT]");
 }
 
@@ -62,4 +64,8 @@ void gdtInitialize()
 void gdtSetActiveStack(virtual_address_t stackPtr) {
     tss.rsp0Low = stackPtr & 0xFFFFFFFF;
     tss.rsp0High = (stackPtr >> 32) & 0xFFFFFFFF;
+}
+
+void gdtSetTLSBase(virtual_address_t base) {
+    gdtCreateEntry(5, (uint32_t)0x0, 0xFFFFF, 0xF2, 0xC); // TLS
 }

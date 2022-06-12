@@ -39,9 +39,10 @@ void memoryInitialize(stivale2_struct *stivale2Info)
               "[Memory]",
               kernelBase->physical_base_address, kernelBase->virtual_base_address);
 
-    pagingDeepDebug = false;
     // Initialize paging
     pagingInitialize(kernelBase->physical_base_address, hhdm->addr);
+
+    logDebugn("%! Done initializing paging", "[Memory]");
 
     // Map the heap's memory
     for (virtual_address_t virt = K_CONST_HEAP_DEFAULT_START; virt < K_CONST_HEAP_DEFAULT_END; virt += PAGE_SIZE)

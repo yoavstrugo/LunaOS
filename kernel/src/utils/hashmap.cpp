@@ -1,4 +1,3 @@
-#if 0
 #include <utils/hashmap.hpp>
 
 #include <stddef.h>
@@ -10,49 +9,49 @@
 /* Private: Short and sweet hash function - "key mod capacity". The key type
  * is restricted to int right now.
  */
-static MapBucketList* find_bucket(HashMap* map, int key) {
+static MapBucketList* find_bucket(HashMap *map, int key) {
     MapBucketList* bucket = NULL;
-    if(map != NULL && map->buckets != NULL) {
+    if(map->buckets != NULL) {
         bucket = &map->buckets[key % map->bucket_count];
     }
     return bucket;
 }
 
-void emhashmap_deinitialize(HashMap* map) {
-    if(map->entries != NULL) {
-        heapFree(map->entries);
-        map->entries = NULL;
+void HashMap::emhashmap_deinitialize() {
+    if(this->entries != NULL) {
+        heapFree(this->entries);
+        this->entries = NULL;
     }
 
-    if(map->buckets != NULL) {
-        heapFree(map->buckets);
-        map->buckets = NULL;
+    if(this->buckets != NULL) {
+        heapFree(this->buckets);
+        this->buckets = NULL;
     }
 }
 
-bool emhashmap_initialize(HashMap* map, int capacity, float load_factor) {
-    map->bucket_count = ((int)(capacity / load_factor) + 1);
-    map->capacity = capacity;
-    map->entries = (MapEntry*) heapAllocate(sizeof(MapEntry) * map->capacity);
-    memset(map->entries, 0, sizeof(MapEntry) * map->capacity);
-    map->buckets = (MapBucketList*) heapAllocate(sizeof(MapBucketList) *
-            map->bucket_count);
-    memset(map->buckets, 0, sizeof(MapBucketList) * map->bucket_count);
+bool HashMap::emhashmap_initialize(int capacity, float load_factor) {
+    this->bucket_count = ((int)(capacity / load_factor) + 1);
+    this->capacity = capacity;
+    this->entries = (MapEntry*) heapAllocate(sizeof(MapEntry) * this->capacity);
+    memset(this->entries, 0, sizeof(MapEntry) * this->capacity);
+    this->buckets = (MapBucketList*) heapAllocate(sizeof(MapBucketList) *
+            this->bucket_count);
+    memset(this->buckets, 0, sizeof(MapBucketList) * this->bucket_count);
 
     int i;
-    for(i = 0; i < map->bucket_count; i++) {
-        LIST_INIT(&map->buckets[i]);
+    for(i = 0; i < this->bucket_count; i++) {
+        LIST_INIT(&this->buckets[i]);
     }
 
-    LIST_INIT(&map->free_list);
-    for(i = 0; i < map->capacity; i++) {
-        LIST_INSERT_HEAD(&map->free_list, &map->entries[i], entries);
+    LIST_INIT(&this->free_list);
+    for(i = 0; i < this->capacity; i++) {
+        LIST_INSERT_HEAD(&this->free_list, &this->entries[i], entries);
     }
-    return map->buckets != NULL;
+    return this->buckets != NULL;
 }
 
-MapEntry* emhashmap_get(HashMap* map, int key) {
-    MapBucketList* bucket = find_bucket(map, key);
+MapEntry* HashMap::emhashmap_get(int key) {
+    MapBucketList* bucket = find_bucket(this, key);
 
     MapEntry* entry;
     LIST_FOREACH(entry, bucket, entries) {
@@ -63,12 +62,12 @@ MapEntry* emhashmap_get(HashMap* map, int key) {
     return NULL;
 }
 
-bool emhashmap_contains(HashMap* map, int key) {
-    return emhashmap_get(map, key) != NULL;
+bool HashMap::emhashmap_contains(int key) {
+    return emhashmap_get(key) != NULL;
 }
 
-bool emhashmap_put(HashMap* map, int key, void* value) {
-    MapBucketList* bucket = find_bucket(map, key);
+bool HashMap::emhashmap_put(int key, void* value) {
+    MapBucketList* bucket = find_bucket(this, key);
 
     MapEntry* entry, *matching_entry = NULL;
     LIST_FOREACH(entry, bucket, entries) {
@@ -81,7 +80,7 @@ bool emhashmap_put(HashMap* map, int key, void* value) {
     if(matching_entry != NULL) {
         matching_entry->value = value;
     } else {
-        MapEntry* new_entry = LIST_FIRST(&map->free_list);
+        MapEntry* new_entry = LIST_FIRST(&this->free_list);
         if(new_entry == NULL) {
             result = false;
         } else {
@@ -94,8 +93,8 @@ bool emhashmap_put(HashMap* map, int key, void* value) {
     return result;
 }
 
-void* emhashmap_remove(HashMap* map, int key) {
-    MapBucketList* bucket = find_bucket(map, key);
+void* HashMap::emhashmap_remove(int key) {
+    MapBucketList* bucket = find_bucket(this, key);
 
     MapEntry* entry, *matching_entry = NULL;
     LIST_FOREACH(entry, bucket, entries) {
@@ -112,31 +111,31 @@ void* emhashmap_remove(HashMap* map, int key) {
     return value;
 }
 
-int emhashmap_size(HashMap* map) {
+int HashMap::emhashmap_size() {
     int size = 0;
     int i;
-    for(i = 0; i < map->bucket_count; i++) {
+    for(i = 0; i < this->bucket_count; i++) {
         MapEntry* entry = NULL;
-        LIST_FOREACH(entry, &map->buckets[i], entries) {
+        LIST_FOREACH(entry, &this->buckets[i], entries) {
             ++size;
         }
     }
     return size;
 }
 
-bool emhashmap_is_empty(HashMap* map) {
-    return emhashmap_size(map) == 0;
+bool HashMap::emhashmap_is_empty() {
+    return emhashmap_size() == 0;
 }
 
-float emhashmap_load_factor(HashMap* map) {
-    return emhashmap_size(map) / map->capacity;
+float HashMap::emhashmap_load_factor() {
+    return emhashmap_size() / this->capacity;
 }
 
-MapIterator emhashmap_iterator(HashMap* map) {
+MapIterator HashMap::emhashmap_iterator() {
     MapIterator iterator;
     iterator.current_bucket = 0;
     iterator.current_entry = NULL;
-    iterator.map = map;
+    iterator.map = this;
     return iterator;
 }
 
@@ -155,4 +154,3 @@ MapEntry* emhashmap_iterator_next(MapIterator* iterator) {
     }
     return iterator->current_entry;
 }
-#endif

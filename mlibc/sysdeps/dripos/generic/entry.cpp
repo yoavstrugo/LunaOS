@@ -1,4 +1,3 @@
-
 #include <stdint.h>
 #include <stdlib.h>
 #include <bits/ensure.h>
@@ -31,4 +30,3 @@ extern "C" void __mlibc_entry(int (*main_fn)(int argc, char *argv[], char *env[]
 	auto result = main_fn(__mlibc_stack_data.argc, __mlibc_stack_data.argv, environ);
 	exit(result);
 }
-

@@ -1,17 +1,13 @@
 
 rtdl_sources += files(
-	'generic/filesystem.cpp',
-	'generic/lemon.cpp',
+	'generic/luna.cpp'
 )
 
 libc_sources += files(
 	'generic/entry.cpp',
-	'generic/filesystem.cpp',
-	'generic/lemon.cpp',
-	'generic/signals.cpp',
-	'generic/sockets.cpp',
 	'generic/thread_entry.S',
-	'generic/thread.cpp'
+	'generic/thread.cpp',
+	'generic/luna.cpp',
 )
 
 if not no_headers
@@ -38,14 +34,16 @@ if not no_headers
 		'include/abi-bits/nlink_t.h',
 		'include/abi-bits/pid_t.h',
 		'include/abi-bits/uid_t.h',
+		'include/abi-bits/gid_t.h',
+		'include/abi-bits/time_t.h',
 		'include/abi-bits/wait.h',
 		'include/abi-bits/limits.h',
 		'include/abi-bits/utsname.h',
 		subdir: 'abi-bits'
 	)
 	install_headers(
-		'include/lemon/syscall.h',
-		subdir: 'lemon'
+		'include/luna/syscall.h',
+		subdir: 'luna'
 	)
 endif
 

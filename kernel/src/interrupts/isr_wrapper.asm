@@ -19,6 +19,8 @@ isr_wrapper:
     push rbx
     push rax
 
+    push 0 ;fsbase
+
     ; Store Segments
     push fs
     push gs
@@ -41,16 +43,21 @@ isr_wrapper:
     mov rsp, rax
 
     pop rax
-    mov ds ,ax
+    mov ds, ax
     mov es, ax
-    mov fs, ax
+    ;mov fs, ax
     mov gs, ax
 
     ; Retrieve Segments
     pop gs
     pop fs
-    mov eax, gs
-    mov ds, eax
+
+    pop rax
+    mov rdx, rax
+    shr rdx, 32
+    and rax, 0xffffffff
+    mov rcx, 0xC0000100
+    wrmsr
 
     ; Retrieve all general purpose registers
     pop rax

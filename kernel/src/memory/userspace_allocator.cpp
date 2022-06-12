@@ -249,12 +249,14 @@ virtual_address_t k_userspace_allocator::allocateInterruptStack(uint64_t stackSi
     return stackPtr - sizeof(uint64_t);
 }
 
-void k_userspace_allocator::allocateSegment(virtual_address_t start, uint64_t size) {
+bool k_userspace_allocator::allocateRange(virtual_address_t start, uint64_t size) {
     virtual_address_t startAligned = PAGING_ALIGN_PAGE_DOWN(start);
     virtual_address_t endAligned   = PAGING_ALIGN_PAGE_UP(start + size);
     uint64_t pages = (endAligned - startAligned) / PAGE_SIZE;
 
-    this->memoryAllocator->useRange(startAligned, pages);
+    if (!this->memoryAllocator->useRange(startAligned, pages))
+        return false;
+        
     for (uint64_t page = 0; page < pages; page++)
     {
         physical_address_t phys = memoryPhysicalAllocator.allocatePage();
@@ -262,6 +264,8 @@ void k_userspace_allocator::allocateSegment(virtual_address_t start, uint64_t si
     }
     
     memset((char *)startAligned, 0, pages * PAGE_SIZE);
+
+    return true;
 }
 
 void k_userspace_allocator::freeStack(virtual_address_t stackPtr)

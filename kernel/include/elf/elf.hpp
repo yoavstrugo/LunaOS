@@ -81,6 +81,7 @@ struct Elf64_Ehdr
 #define PT_NOTE 4            // Note sections
 #define PT_SHLIB 5           // Reserved
 #define PT_PHDR 6            // Program header table
+#define PT_TLS 7             // Program header table
 #define PT_LOOS 0x60000000   // Environment-specific use low bytes
 #define PT_HIOS 0x6FFFFFFF   // Environment-specific use high bytes
 #define PT_LOPROC 0x70000000 // Processor-specific use low bytes
@@ -106,7 +107,7 @@ struct Elf64_Phdr
     Elf64_Xword p_filesz; /* Size of segment in file */
     Elf64_Xword p_memsz;  /* Size of segment in memory */
     Elf64_Xword p_align;  /* Alignment of segment */
-}__attribute__((packed));
+} __attribute__((packed));
 
 struct Elf64_Shdr
 {
@@ -143,15 +144,15 @@ enum ELF_LOAD_STATUS
     SUCCESS = 0,
     FAILED_TO_OPEN = 1, // Failed to open file
     INVALID_HEADER = 2,
-    FAILED_TO_READ = 3 ,
+    FAILED_TO_READ = 3,
     UNSUPPORTED_ELF = 4
 };
 
 /**
  * @brief Loads an ELF file and create a process with thread which executes it
- * 
+ *
  * @param fileName The path to the ELF file
  * @return ELF_LOAD_STATUS The status of the loading
  */
 ELF_LOAD_STATUS
-    elfLoad(char *fileName);
+elfLoad(char *fileName, const char *name, k_process *proc);

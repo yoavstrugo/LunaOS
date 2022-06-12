@@ -9,7 +9,11 @@
 
 #include <gdt/gdt.hpp>
 
+#include <logger/printf.hpp>
+#include <strings.hpp>
+
 static k_processor_tasking *processorTaskingArray;
+static k_process *focusedProcess;
 
 uint64_t k_processor_tasking::getNextID()
 {
@@ -20,7 +24,7 @@ void _idleThread()
 {
     interruptsEnable();
     for (;;)
-        asm("hlt");
+        ;
 }
 
 void taskingInitialize(uint8_t numOfCPUs)
@@ -61,17 +65,33 @@ k_process *taskingCreateProcess()
     entry->next = taskingGetProcessor()->processes;
     taskingGetProcessor()->processes = entry;
 
+    // Initialize file descriptors hash map
+    process->fileDescriptors = new List<FIL *>(3);
+
+    FIL *stdin = new FIL();
+    f_open(stdin, "/root/dev/stdin", FA_READ | FA_WRITE | FA_OPEN_APPEND);
+    process->fileDescriptors->add(stdin); // stdin
+
+    FIL *stdout = new FIL();
+    f_open(stdout, "/root/dev/stdout", FA_WRITE | FA_OPEN_APPEND);
+    process->fileDescriptors->add(stdout); // stdout
+    process->fileDescriptors->add(stdout); // stderr
+
     return process;
 }
 
 void taskingInitializeThreadMemory(k_thread *thread, THREAD_PRIVILEGE privilege)
 {
+    char *stackStr;
     if (privilege == KERNEL)
     {
         thread->stack.start = thread->process->processAllocator->allocateStack(USERSPACE_STACK_SIZE, true);
         thread->stack.end = thread->stack.start + USERSPACE_STACK_SIZE;
         thread->interruptStack.start = 0;
         thread->interruptStack.end = 0;
+
+        // The context of the thread is on the top of the stack (stack is going downwards - end is the top)
+        thread->context = (k_thread_state *)(thread->stack.end - sizeof(k_thread_state));
     }
     else
     {
@@ -79,14 +99,49 @@ void taskingInitializeThreadMemory(k_thread *thread, THREAD_PRIVILEGE privilege)
         thread->stack.end = thread->stack.start + USERSPACE_STACK_SIZE;
         thread->interruptStack.start = thread->process->processAllocator->allocateInterruptStack(INTERRUPT_STACK_SIZE);
         thread->interruptStack.end = thread->interruptStack.start + INTERRUPT_STACK_SIZE;
+
+        // Copy the Master TLS to this thread
+        k_process *process = thread->process;
+        size_t alignment = process->masterTLS.alignment; // process->masterTLS.alignment > alignof(UserThread) ? process->masterTLS.alignment : alignof(UserThread);
+        size_t totalSizeAligned = ALIGN_UP(process->masterTLS.totalSize, alignment) + sizeof(UserThread);
+        thread->tls.start = process->processAllocator->allocateStack(totalSizeAligned, false);
+        thread->tls.end = thread->tls.start + totalSizeAligned;
+
+        memset((char *)thread->tls.start, 0, totalSizeAligned);
+        memcpy((void *)thread->tls.start, (void *)process->masterTLS.location, process->masterTLS.actualSize);
+
+        UserThread *userThread = (UserThread *)(thread->tls.start +
+                                                ALIGN_UP(process->masterTLS.totalSize, alignment));
+        userThread->self = userThread;
+        thread->tls.userThread = (virtual_address_t)userThread;
+
+        virtual_address_t argv = process->processAllocator->allocateStack(4096, false);
+
+        const char *name = "heyo";
+        char *stackStr = (char *)thread->stack.end;
+
+        // envp
+        stackStr -= sizeof(char *);
+        *stackStr = NULL;
+
+        // argv
+        memcpy((void *)argv, name, strlen(name) + 1);
+        stackStr -= sizeof(char *);
+        *(char **)stackStr = (char *)argv;
+        argv += strlen(name) + 1;
+
+        // argc
+        stackStr -= sizeof(char *);
+        *(int *)stackStr = 1;
+
+        // The context of the thread is on the top of the stack (stack is going downwards - end is the top)
+        thread->context = (k_thread_state *)((virtual_address_t)stackStr - sizeof(k_thread_state));
     }
 
-    // The context of the thread is on the top of the stack (stack is going downwards - end is the top)
-    thread->context = (k_thread_state *)(thread->stack.end - sizeof(k_thread_state));
     // Stack always start at the topmost address and goes down
     thread->context->rbp = thread->stack.end; // TODO: this might cause a problem
     // Set the stack pointer of the thread
-    thread->context->rsp = (register_t)thread->context;
+    thread->context->rsp = (register_t)thread->context + sizeof(k_thread_state);
 }
 
 void taskingAddThreadToProcess(k_thread *thread, k_process *process)
@@ -123,6 +178,7 @@ k_thread *taskingCreateThread(virtual_address_t entryPoint, k_process *process, 
     // Set segments according to privileges
     thread->privilege = privilege;
     taskingSetupPrivileges(thread);
+    thread->context->rflags |= RFLAGS_IF | RFLAGS_ALWAYS_ON;
 
     // Add the thread to it's parent process and assign an id to it
     taskingAddThreadToProcess(thread, process);
@@ -150,7 +206,7 @@ void taskingSwitch()
         threadToRun->status = RUNNING;
 
         // The previouse thread should be ready to execute again
-        if (previousThread != NULL)
+        if (previousThread != NULL && previousThread != threadToRun)
             if (previousThread->status == RUNNING)
                 previousThread->status = READY;
     }
@@ -188,7 +244,7 @@ void taskingSetupPrivileges(k_thread *thread)
         thread->context->gs = 0x10 | 0;
         thread->context->fs = 0x10 | 0;
         thread->context->ds = 0x10 | 0;
-        thread->context->rflags = RFLAGS_IOPL | RFLAGS_ALWAYS_ON;
+        thread->context->rflags = RFLAGS_IOPL;
     }
     else if (thread->privilege == USER)
     {
@@ -197,6 +253,14 @@ void taskingSetupPrivileges(k_thread *thread)
         thread->context->gs = 0x20 | 3;
         thread->context->fs = 0x20 | 3;
         thread->context->ds = 0x20 | 3;
-        thread->context->rflags = RFLAGS_ALWAYS_ON;
     }
+}
+
+k_process *taskingGetFocusedProcess()
+{
+    return focusedProcess;
+}
+
+void taskingSetFocusedProcess(k_process *proc) {
+    focusedProcess = proc;
 }

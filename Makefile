@@ -24,7 +24,8 @@ QEMU_CORES 		= 1
 QEMU_MEM		= 1.5G
 QEMU_CPU		= qemu64
 QEMU_MACHINE 	= q35
-QEMU_FLAGS 	= -m ${QEMU_MEM} -cpu ${QEMU_CPU} -smp ${QEMU_CORES} -M ${QEMU_MACHINE} -net none -drive file=./os-disk.img -d int,mmu -M smm=off -D qemu.log
+QEMU_TRACE		= -d int
+QEMU_FLAGS 	= -m ${QEMU_MEM} -cpu ${QEMU_CPU} -smp ${QEMU_CORES} -M ${QEMU_MACHINE} -net none -drive file=./os-disk.img -M smm=off ${QEMU_TRACE} -D qemu.log
 
 .PHONY: buildimg
 buildimg: 
@@ -107,7 +108,7 @@ copytohost: buildiso
 
 .PHONY: createdisk
 createdisk:
-	@dd if=/dev/zero of=os-disk.img bs=1024 count=2047 2>/dev/null
+	@dd if=/dev/zero of=os-disk.img bs=1024 count=2048 2>/dev/null
 	@sudo chmod o+rwx ./os-disk.img
 
 .PHONY: mountdisk

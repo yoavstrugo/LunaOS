@@ -58,8 +58,6 @@ void k_virtual_address_range_allocator::addRange(virtual_address_t start, virtua
     this->mergeAll();
 }
 
-
-
 virtual_address_t k_virtual_address_range_allocator::allocateRange(uint64_t pages, const char *request)
 {
     k_address_range_header *range = this->head;
@@ -169,54 +167,60 @@ k_address_range_header *k_virtual_address_range_allocator::getRanges()
     return this->head;
 }
 
-void k_virtual_address_range_allocator::useRange(virtual_address_t start, uint64_t size)
+bool k_virtual_address_range_allocator::useRange(virtual_address_t start, uint64_t size)
 {
     // Look for the range contains the range to remove
     k_address_range_header *range = this->head;
     k_address_range_header *prev = NULL;
 
     uint64_t startAligned = PAGING_ALIGN_PAGE_DOWN(start);
-    uint64_t sizeAligned = PAGING_ALIGN_PAGE_UP(size);
-    uint64_t sizePages = sizeAligned / PAGE_SIZE;
-
+    uint64_t sizePages = size;
+    uint64_t sizeAligned = size * PAGE_SIZE;
     while (range)
     {
-        if ((virtual_address_t)range->base > startAligned &&
-            (virtual_address_t)range->base < startAligned + sizeAligned)
-            startAligned = range->base;
-
-        if (((virtual_address_t)range->base <= startAligned) && !range->used)
+        if (!range->used)
         {
-            if (range->base == startAligned) {
-                k_address_range_header *split = new k_address_range_header();
-                split->used = false;
-                split->next = range->next;
-                split->pages = range->pages - sizePages;
-                split->base = range->base + sizeAligned;
-                range->used =true;
+            if (((virtual_address_t)range->base <= startAligned) &&
+                startAligned + sizeAligned < ((virtual_address_t)range->base + range->pages * PAGE_SIZE))
+            {
+                if (range->base == startAligned)
+                {
+                    k_address_range_header *split = new k_address_range_header();
+                    split->used = false;
+                    split->next = range->next;
+                    split->pages = range->pages - sizePages;
+                    split->base = range->base + sizeAligned;
+                    range->used = true;
 
-                range->next = split;
-            } else {
-                k_address_range_header *split1 = new k_address_range_header();
-                k_address_range_header *split2 = new k_address_range_header();
+                    range->next = split;
+                }
+                else
+                {
+                    k_address_range_header *split1 = new k_address_range_header();
+                    k_address_range_header *split2 = new k_address_range_header();
 
-                split1->pages = sizePages;
-                split1->base = startAligned;
-                split1->used = true;
-                split1->next = split2;
+                    split1->pages = sizePages;
+                    split1->base = startAligned;
+                    split1->used = true;
+                    split1->next = split2;
 
-                split2->next = range->next;
-                split2->pages = range->pages;
+                    split2->next = range->next;
+                    split2->pages = range->pages;
+                    split2->base = split1->base + split1->pages * PAGE_SIZE;
+                    split2->used = false;
 
-                range->next = split1;
-                range->pages = (split1->base - range->base) / PAGE_SIZE;
+                    range->next = split1;
+                    range->pages = (split1->base - range->base) / PAGE_SIZE;
 
-                split2->pages -= range->pages + split1->pages;
+                    split2->pages -= range->pages + split1->pages;
+                }
+
+                return true;
             }
-
-            break;
         }
         prev = range;
         range = range->next;
     }
+
+    return false;
 }

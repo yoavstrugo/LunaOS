@@ -34,6 +34,8 @@ void pitPrepareSleep(uint32_t microseconds)
 #endif
 }
 
+
+
 void pitPerformSleep()
 {
 #ifdef VERBOSE_PIT
@@ -49,9 +51,12 @@ void pitPerformSleep()
 	ioOutByte(0x61, (uint8_t)pitControlByte & ~1); // clear bit 0
 	ioOutByte(0x61, (uint8_t)pitControlByte | 1);  // set bit 0
 
+	uint64_t pitCounter = 0;
+
 	// Wait for PIT counter to reach 0
-	while (!(ioInByte(0x61) & 0x20))
-		;
+	while (!(ioInByte(0x61) & 0x20)) {
+		pitCounter++;
+	}
 
 #ifdef VERBOSE_PIT
 	logDebugn("%! Sleep ended.", "[PIT]");

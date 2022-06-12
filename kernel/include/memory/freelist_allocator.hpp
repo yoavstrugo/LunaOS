@@ -1,12 +1,13 @@
 #pragma once
 
 #include <types.hpp>
+#include <stddef.h>
 
 struct k_chunk_header
 {
     k_chunk_header *next;
     uint8_t used : 1;
-    uint64_t size;
+    size_t size;
 } __attribute__((packed));
 
 struct k_freelist_allocator

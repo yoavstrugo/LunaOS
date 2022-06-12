@@ -37,3 +37,16 @@ bool processorEnableSSE()
     }
     return false;
 }
+
+void processorSetMSR(msr_t msr, uint64_t value)
+{
+    uint32_t lo = (value & 0xFFFFFFFF);
+    uint32_t hi = (value >> 32) & 0xFFFFFFFF;
+    asm volatile("wrmsr" : : "a"(lo), "d"(hi), "c"(msr));
+}
+
+uint64_t processorGetMSR(msr_t msr) {
+    uint32_t *lo;
+    uint32_t *hi;
+    asm volatile("rdmsr" : "=a"(*lo), "=d"(*hi) : "c"(msr));
+}

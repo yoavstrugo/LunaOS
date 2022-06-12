@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <types.hpp>
 
-#define K_GDT_SIZE 5
+#define K_GDT_SIZE 6
 #define K_TSS_LOCATION 0xFFFF800150200000
 
 /**

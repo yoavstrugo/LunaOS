@@ -56,6 +56,7 @@ ASMFLAGS ?= -f elf64
 override INTERNALCFLAGS :=   \
 	-I $(INCLUDESDIR)    \
 	-I $(APIDIR)    	\
+	 -mfsgsbase \
 	-std=c++98           \
 	-Wno-conversion-null \
 	-Wno-unused-parameter \

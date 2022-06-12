@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cpuid.h>
+#include <stdint.h>
 
 /* Vendor strings from CPUs. */
 #define CPUID_VENDOR_OLDAMD        "AMDisbetter!" // Early engineering samples of AMD K5 processor
@@ -129,3 +130,9 @@ bool processorHasAPIC();
  * @return false If it doesn't have SSE
  */
 bool processorHasSSE();
+
+typedef uint64_t msr_t;
+
+void processorSetMSR(msr_t msr, uint64_t value);
+
+uint64_t processorGetMSR(msr_t msr);

@@ -305,7 +305,7 @@ int abstract_file::_init_bufmode() {
 	if(_bufmode != buffer_mode::unknown)
 		return 0;
 
-	if(determine_bufmode(&_bufmode))
+	if(this->determine_bufmode(&_bufmode))
 		return -1;
 	__ensure(_bufmode != buffer_mode::unknown);
 	return 0;

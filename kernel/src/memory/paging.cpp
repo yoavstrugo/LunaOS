@@ -6,8 +6,6 @@
 #include <types.hpp>
 #include <logger/logger.hpp>
 
-bool pagingDeepDebug = false;
-
 // TODO: checking that the allocateBlock() returned a valid address
 // TODO: checking addresses alignment
 void pagingMapPageInSpace(virtual_address_t virt, physical_address_t phys,
@@ -16,16 +14,18 @@ void pagingMapPageInSpace(virtual_address_t virt, physical_address_t phys,
                           bool override)
 {
 
-    if (pagingDeepDebug)
+#ifdef VERBOSE_PAGING
         logDebugn("%! Starting mapping of page \
                     \n0x%64x to 0x%64x, at PML4 0x%64x:",
                   "[Paging]", virt, phys, pml4Addr);
+                  #endif
 
     // Creating PDPT
     pagetable_entry_t *pml4 = (pagetable_entry_t *)PAGING_APPLY_DIRECTMAP(pml4Addr);
     pagetable_entry_t pml4e = pml4[PML4_INDEXER(virt)];
-    if (pagingDeepDebug)
+    #ifdef VERBOSE_PAGING
         logDebugn("\t- PML4 entry indexed %d", PML4_INDEXER(virt));
+        #endif
     pagetable_entry_t *pdpt;
 
     if (!(pml4e & PAGETABLE_PRESENT))
@@ -35,8 +35,9 @@ void pagingMapPageInSpace(virtual_address_t virt, physical_address_t phys,
         memset((char *)pdpt, 0, PAGE_SIZE);
         pml4e |= (uint64_t)PAGING_REMOVE_DIRECTMAP(pdpt);
         pml4[PML4_INDEXER(virt)] = pml4e;
-        if (pagingDeepDebug)
+        #ifdef VERBOSE_PAGING
             logDebugn("\t- PDPT was created at 0x%64x", pdpt);
+            #endif
     }
     else
     {
@@ -48,20 +49,23 @@ void pagingMapPageInSpace(virtual_address_t virt, physical_address_t phys,
             pml4e &= (~((pagetable_entry_t)0)) << 12;
             pml4e |= flags.pml4Flags;
             pml4[PML4_INDEXER(virt)] = pml4e;
-            if (pagingDeepDebug)
+            #ifdef VERBOSE_PAGING
                 logDebugn("\t- PDPT was overriden at 0x%64x", pdpt);
+                #endif
         }
         else
         {
-            if (pagingDeepDebug)
+            #ifdef VERBOSE_PAGING
                 logDebugn("\t- PDPT was already at 0x%64x", pdpt);
+                #endif
         }
     }
 
     // Creating PD
     pagetable_entry_t pdpte = pdpt[PDPT_INDEXER(virt)];
-    if (pagingDeepDebug)
+    #ifdef VERBOSE_PAGING
         logDebugn("\t- PDPT entry indexed %d", PDPT_INDEXER(virt));
+        #endif
     pagetable_entry_t *pd;
 
     if (!(pdpte & PAGETABLE_PRESENT))
@@ -71,8 +75,9 @@ void pagingMapPageInSpace(virtual_address_t virt, physical_address_t phys,
         memset((char *)pd, 0, PAGE_SIZE);
         pdpte |= (uint64_t)PAGING_REMOVE_DIRECTMAP(pd);
         pdpt[PDPT_INDEXER(virt)] = pdpte;
-        if (pagingDeepDebug)
+        #ifdef VERBOSE_PAGING
             logDebugn("\t- PD was created at 0x%64x", pd);
+            #endif
     }
     else
     {
@@ -84,20 +89,23 @@ void pagingMapPageInSpace(virtual_address_t virt, physical_address_t phys,
             pdpte &= (~((pagetable_entry_t)0)) << 12;
             pdpte |= flags.pdptFlags;
             pdpt[PDPT_INDEXER(virt)] = pdpte;
-            if (pagingDeepDebug)
+            #ifdef VERBOSE_PAGING
                 logDebugn("\t- PD was overriden at 0x%64x", pd);
+                #endif
         }
         else
         {
-            if (pagingDeepDebug)
+            #ifdef VERBOSE_PAGING
                 logDebugn("\t- PDPT was already at 0x%64x", pd);
+                #endif
         }
     }
 
     // Creating PT
     pagetable_entry_t pde = pd[PD_INDEXER(virt)];
-    if (pagingDeepDebug)
+    #ifdef VERBOSE_PAGING
         logDebugn("\t- PD entry indexed %d", PD_INDEXER(virt));
+        #endif
     pagetable_entry_t *pt;
 
     if (!(pde & PAGETABLE_PRESENT))
@@ -107,8 +115,9 @@ void pagingMapPageInSpace(virtual_address_t virt, physical_address_t phys,
         memset((char *)pt, 0, PAGE_SIZE);
         pde |= (uint64_t)PAGING_REMOVE_DIRECTMAP(pt);
         pd[PD_INDEXER(virt)] = pde;
-        if (pagingDeepDebug)
+        #ifdef VERBOSE_PAGING
             logDebugn("\t- PT was created at 0x%64x", pt);
+            #endif
     }
     else
     {
@@ -120,20 +129,23 @@ void pagingMapPageInSpace(virtual_address_t virt, physical_address_t phys,
             pde &= (~((pagetable_entry_t)0)) << 12;
             pde |= flags.pdFlags;
             pd[PD_INDEXER(virt)] = pde;
-            if (pagingDeepDebug)
+            #ifdef VERBOSE_PAGING
                 logDebugn("\t- PT was overriden at 0x%64x", pt);
+                #endif
         }
         else
         {
-            if (pagingDeepDebug)
+            #ifdef VERBOSE_PAGING
                 logDebugn("\t- PT was already at 0x%64x", pt);
+                #endif
         }
     }
 
     // Creating the page
     pagetable_entry_t pte = pt[PT_INDEXER(virt)];
-    if (pagingDeepDebug)
+    #ifdef VERBOSE_PAGING
         logDebugn("\t- PT entry indexed %d", PT_INDEXER(virt));
+        #endif
 
     // Whether if override is on or the page isn't present, set the flags and the address.
     if (!(pte & PAGE_PRESENT) || override)
@@ -142,8 +154,9 @@ void pagingMapPageInSpace(virtual_address_t virt, physical_address_t phys,
         pte |= flags.ptFlags;
         pte |= phys;
         pt[PT_INDEXER(virt)] = pte;
-        if (pagingDeepDebug)
+        #ifdef VERBOSE_PAGING
             logDebugn("\t- PT was created/overriden at 0x%64x", ADDRESS_EXCLUDE(pte));
+            #endif
     }
 }
 
@@ -268,15 +281,20 @@ void pagingInitialize(physical_address_t kernelBase, virtual_address_t hhdm)
 {
     physical_address_t pml4Addr = memoryPhysicalAllocator.allocatePage();
 
+    logDebugn("%! Mapping first 4GiB", "[Memory]");
     // Identity map first 4GiB of memory
     pagingMapMemoryInTable(0x0000000000000000, 0x0000000000000000, 4 * GiB_SIZE, pml4Addr, PAGING_DEFAULT_FLAGS, true);
+    logDebugn("%! Done mapping first 4GiB", "[Memory]");
 
+    logDebugn("%! Mapping first 4GiB from HHDM", "[Memory]");
     // Map 4GiB from the HHDM
     pagingMapMemoryInTable(hhdm, 0x0000000000000000, 4 * GiB_SIZE, pml4Addr, PAGING_DEFAULT_FLAGS, true);
+    logDebugn("%! Done maapping first 4GiB from HHDM", "[Memory]");
 
+    logDebugn("%! Mapping higher half", "[Memory]");
     // Map the higher half kernel
     pagingMapMemoryInTable(0xffffffff80000000, kernelBase, 0x80000000, pml4Addr, PAGING_DEFAULT_FLAGS, true);
-    
+    logDebugn("%! Done mapping higherhalf", "[Memory]");
 
     pagingSwitchSpace(pml4Addr);
 }

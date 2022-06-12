@@ -109,13 +109,13 @@ void pciEnumerateDevices(k_mcfg_hdr *mcfgHeader)
         device->device = (PCICommonConfig *)virtualAddressRangeAllocator.allocateRange(1, "pci\0");
         pagingMapPage((virtual_address_t)device->device, device->physicalAddress);
 
-
         k_pci_class_mapping deviceMapping =
             pciGetMapping(device->device->baseClass,
                           device->device->subClass,
                           device->device->progIf);
 
-        // Print device information
+// Print device information
+#ifdef VERBOSE_PCI
         logDebugn("%! Device: %s - %s",
                   "[PCI]",
                   deviceMapping.className,
@@ -124,8 +124,10 @@ void pciEnumerateDevices(k_mcfg_hdr *mcfgHeader)
                   device->device->baseClass,
                   device->device->subClass,
                   device->device->progIf);
-
+#endif
 
         device = device->next;
     }
+
+    logInfon("%! has enumerated devices", "[PCI]");
 }

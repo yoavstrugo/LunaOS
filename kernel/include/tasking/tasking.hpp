@@ -3,7 +3,11 @@
 #include <types.hpp>
 #include <stdint.h>
 #include <memory/userspace_allocator.hpp>
+#include <fatfs/ff.h>
+#include <utils/list.hpp>
+
 #include <syscalls/syscalls.hpp>
+#include <syscalls/syscalls_data.hpp>
 
 #define USERSPACE_IMAGE_END 0xFFFF800000000000
 
@@ -11,6 +15,14 @@ struct k_process;
 struct k_thread;
 
 typedef uint64_t register_t;
+
+typedef uint64_t pid_t;
+typedef uint64_t uid_t;
+typedef uint64_t pgid_t;
+typedef uint64_t sid_t;
+typedef uint64_t gid_t;
+typedef uint64_t euid_t;
+typedef uint64_t egid_t;
 
 enum THREAD_STATUS
 {
@@ -59,6 +71,8 @@ struct k_thread_state
     register_t gs;
     register_t fs;
 
+    register_t fs_base;
+
     register_t rax;
     register_t rbx;
     register_t rcx;
@@ -87,6 +101,11 @@ struct k_thread_state
     register_t rsp;
     register_t ss;
 } __attribute__((packed));
+
+struct UserThread
+{
+    UserThread *self;
+};
 
 struct k_thread
 {
@@ -125,6 +144,13 @@ struct k_thread
         virtual_address_t end;
     } interruptStack;
 
+    struct 
+    {
+        virtual_address_t userThread;
+        virtual_address_t start;
+        virtual_address_t end;
+    } tls;
+
     /**
      * @brief The state of the thread.
      */
@@ -133,8 +159,8 @@ struct k_thread
     // If this thread is a syscall
     struct
     {
-        syscall_handler_t handler;
-        void *data;
+        Syscall::SyscallHandler_t handler;
+        Syscall::SyscallData *data;
         k_thread *targetThread;
     } syscall;
 };
@@ -162,6 +188,16 @@ struct k_process
     k_thread_entry *threads;
 
     k_userspace_allocator *processAllocator;
+
+    struct {
+        virtual_address_t location;
+        size_t actualSize;
+        size_t totalSize;
+        size_t alignment;
+        size_t userThreadOffset;
+    } masterTLS;
+
+    List<FIL *> *fileDescriptors;
 };
 
 /**
@@ -222,6 +258,10 @@ void taskingInitialize(uint8_t numOfCPUs);
  *
  */
 void taskingSwitch();
+
+k_process *taskingGetFocusedProcess();
+
+void taskingSetFocusedProcess(k_process *);
 
 /**
  * @brief Returns the currently running thread

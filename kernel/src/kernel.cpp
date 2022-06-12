@@ -44,9 +44,11 @@
 
 #include <logger/printf.hpp>
 
+#include <ps2/ps2.hpp>
+
 // We need to tell the stivale bootloader where we want our stack to be.
 // We are going to allocate our stack as an array in .bss.
-static uint8_t stack[0x100000];
+static uint8_t stack[0x1000000];
 
 // stivale2 uses a linked list of tags for both communicating TO the
 // bootloader, or receiving info FROM it. More information about these tags
@@ -113,19 +115,6 @@ extern "C" void kernelMain(stivale2_struct *stivale2Struct)
     // kernelHalt();
 }
 
-void threadProgram()
-{
-    logInfon("%! THREAD IS RUNNING!", "[THREAD]");
-    asm volatile("mov rax, 0x0\n\
-                    int 0x80");
-}
-
-void userthreadMain()
-{
-    while (true)
-        ;
-}
-
 k_ahci_driver *mainDriver;
 
 void kernelInitialize(stivale2_struct *stivaleInfo)
@@ -141,8 +130,10 @@ void kernelInitialize(stivale2_struct *stivaleInfo)
 
     acpiInitialize(stivaleInfo);
 
-    if(!processorEnableSSE())
+    if (!processorEnableSSE())
         kernelPanic("SSE is not available on this processor!");
+    
+    PS2::initialize();
 
     interruptsInitialize();
 
@@ -150,39 +141,28 @@ void kernelInitialize(stivale2_struct *stivaleInfo)
     if (!mcfgHeader)
         kernelPanic("%! Couldn't find MCFG.", "[ACPI]");
 
+
     pciEnumerateDevices((k_mcfg_hdr *)mcfgHeader);
+
+    filesystemInitialize();
 
     schedulerInit();
 
     taskingInitialize(1);
     taskingAddCPU(0);
 
-    filesystemInitialize();
+    Syscall::initialize();
 
-    syscallInitialize();
+    ELF_LOAD_STATUS status;
+    k_process *proc;
+    if ((status = elfLoad("root/apps/test.elf", (const char*)"heyo", proc)) == SUCCESS)
+        logInfon("SUCCESS");
+    else
+        logInfon("FAILED %d", status);
 
-    double t = 3.01;
-    double v = 5.444;
+    taskingSetFocusedProcess(proc);
 
-    double s = t + v;
-    char buf[10];
-    sprintf(buf, "%f", s);
-
-    logInfon("%s", buf);
-
-    // ELF_LOAD_STATUS status;
-    // if ((status = elfLoad("root/apps/main.elf")) == SUCCESS)
-    //     logInfon("SUCCESS");
-    // else
-    //     logInfon("FAILED %d", status);
-
-    
-
-    // k_process *proc = taskingCreateProcess();
-    // taskingCreateProcess();
-    // taskingCreateThread((virtual_address_t)threadProgram, proc, KERNEL);
-
-    // lapicStartTimer();
+    lapicStartTimer();
 }
 
 void kernelPanic(const char *msg, ...)

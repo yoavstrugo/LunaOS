@@ -11,7 +11,9 @@
 k_ahci_driver::k_ahci_driver(PCICommonConfig *pciBaseAddress)
 {
     this->pciBaseAddress = pciBaseAddress;
-    logInfon("%! AHCI Driver instance initalized.", "[AHCI Driver]");
+#ifdef VERBOSE_AHCI
+    logDebugn("PCI BASE ADDRESS: 0x%64x", pciBaseAddress);
+#endif
 
     physical_address_t physABAR = pciBaseAddress->u.type0.baseAddresses[5];
     virtual_address_t virtABAR = virtualAddressRangeAllocator.allocateRange(1, "ahci");
@@ -27,6 +29,9 @@ k_ahci_driver::k_ahci_driver(PCICommonConfig *pciBaseAddress)
     // Probe all ports and look for devices
     this->portCount = 0;
     this->probePorts();
+#ifdef VERBOSE_AHCI
+    logDebugn("%! AHCI Driver instance initalized.", "[AHCI Driver]");
+#endif
 }
 
 bool k_ahci_driver::initialize(uint8_t drive)
@@ -41,18 +46,18 @@ bool k_ahci_driver::initialize(uint8_t drive)
 
     port->rebase();
 
-    
     port->identity = (k_SATA_ident *)virtualAddressRangeAllocator.allocateRange(1, "ahci");
     pagingMapPage((virtual_address_t)port->identity, memoryPhysicalAllocator.allocatePage());
-    memset((char*)port->identity, 0, 0x1000);
+    memset((char *)port->identity, 0, 0x1000);
 
     port->identify();
-    
-    logDebugn("%! Initialized drive with:\
+
+#ifdef VERBOSE_AHCI
+    logDebugn("%! Initialized drive on port %d with:\
                 \n\t- Sector count: %d",
-              "[AHCI Driver]", port->identity->lba_capacity);
+              "[AHCI Driver]", port->portNumber, port->identity->lba_capacity);
 
-
+#endif
 
     return port->initialized;
 }
@@ -69,6 +74,10 @@ bool k_ahci_driver::status(uint8_t drive)
 
 bool k_ahci_driver::read(uint8_t drive, uint64_t sector, uint32_t count, uint8_t *buf)
 {
+#ifdef VERBOSE_AHCI
+    logDebugn("%! Trying to read from port %d", "[AHCI Driver]", drive);
+    logDebugn("%! Port count is %d", "[AHCI Driver]", this->portCount);
+#endif
     if (!(drive < this->portCount))
         return false;
 
@@ -167,7 +176,7 @@ bool k_ahci_port::identify()
     cmdHeader->w = 0;                                        // Read from device
     cmdHeader->c = 1;                                        // Read from device
     cmdHeader->p = 1;                                        // Read from device
-    cmdHeader->prdtl = 1;     // PRDT entries count
+    cmdHeader->prdtl = 1;                                    // PRDT entries count
 
     // Edit the command table for the read
     k_HBA_cmd_table *cmdTable = this->virtualCTBs[slot];
@@ -182,7 +191,7 @@ bool k_ahci_port::identify()
 
     // Create the FIS (Frame Information Structure)
     FIS_REG_H2D *cmdFIS = (FIS_REG_H2D *)(&cmdTable->cfis);
-    memset((char*)cmdFIS, 0, sizeof(FIS_REG_H2D));
+    memset((char *)cmdFIS, 0, sizeof(FIS_REG_H2D));
     cmdFIS->fis_type = FIS_TYPE_REG_H2D;
     cmdFIS->c = 1; // Command
     cmdFIS->command = ATA_CMD_IDENTIFY_DEV;
@@ -359,12 +368,21 @@ int k_ahci_port::findCMDslot()
 
 bool k_ahci_port::read(uint32_t startl, uint32_t starth, uint32_t count, uint8_t *buf)
 {
+#ifdef VERBOSE_AHCI
+    logDebugn("Reading started in port %d", this->portNumber);
+#endif
     this->hbaPort->is = 0xffff; // Clear pending interrupt bits
 
+#ifdef VERBOSE_AHCI
+    logDebugn("Looking for an empty command slot");
+#endif
     // Find a free command slot
     int slot = this->findCMDslot();
     if (slot == -1)
         return false;
+#ifdef VERBOSE_AHCI
+    logDebugn("Found command slot %d", slot);
+#endif
 
     // Edit the header for the command for the read
     k_HBA_cmd_header *cmdHeader = (k_HBA_cmd_header *)this->virtualCLB;
@@ -441,7 +459,9 @@ bool k_ahci_port::read(uint32_t startl, uint32_t starth, uint32_t count, uint8_t
         logInfon("%! Read disk error.", "[AHCI Driver]");
         return false;
     }
-
+#ifdef VERBOSE_AHCI
+    logDebugn("Reading ended successfully in port %d", this->portNumber);
+#endif
     return true;
 }
 
@@ -467,13 +487,21 @@ uint64_t k_ahci_driver::getSectorCount(uint8_t drive)
 
 bool k_ahci_port::write(uint32_t startl, uint32_t starth, uint32_t count, uint8_t *buf)
 {
+#ifdef VERBOSE_AHCI
+    logDebugn("Writing started in port %d", this->portNumber);
+#endif
     this->inWrite = true;
     this->hbaPort->is = 0xffff; // Clear pending interrupt bits
-
+#ifdef VERBOSE_AHCI
+    logDebugn("Looking for command slot");
+#endif
     // Find a free command slot
     int slot = this->findCMDslot();
     if (slot == -1)
         return false;
+#ifdef VERBOSE_AHCI
+    logDebugn("Found command slot %d", slot);
+#endif
 
     // Edit the header for the command for the read
     k_HBA_cmd_header *cmdHeader = (k_HBA_cmd_header *)this->virtualCLB;
@@ -529,7 +557,7 @@ bool k_ahci_port::write(uint32_t startl, uint32_t starth, uint32_t count, uint8_
     }
     if (spin == 1000000)
     {
-        logInfon("%! Port %d is hung.", "[AHCI Driver]", this->portNumber);
+        logWarnn("%! Port %d is hung.", "[AHCI Driver]", this->portNumber);
         return false;
     }
 
@@ -541,16 +569,21 @@ bool k_ahci_port::write(uint32_t startl, uint32_t starth, uint32_t count, uint8_
             break;
         if (this->hbaPort->is & HBA_PxIS_TFES)
         { // Task file error
-            logInfon("%! Read disk error.", "[AHCI Driver]");
+            logWarnn("%! Write disk error, \n\
+            SERRR: %d, IS: %d, CI: %d.",
+                     "[AHCI Driver]", hbaPort->serr, hbaPort->is, hbaPort->ci);
             return false;
         }
     }
     if (this->hbaPort->is & HBA_PxIS_TFES)
     {
-        logInfon("%! Read disk error.", "[AHCI Driver]");
+        logInfon("%! Write disk error, TFD: %d.", "[AHCI Driver]", hbaPort->tfd);
         return false;
     }
 
+#ifdef VERBOSE_AHCI
+    logDebugn("Writing ended successfully in port %d", this->portNumber);
+#endif
     this->inWrite = false;
     return true;
 }

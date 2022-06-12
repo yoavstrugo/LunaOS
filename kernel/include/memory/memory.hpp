@@ -19,6 +19,8 @@
 #define K_MEMORY_UNIT(mem) ((mem >= GiB_unit) ? "GiB" : ((mem >= MiB_unit) ? "MiB" : ((mem >= KiB_unit) ? "KiB" : "Bytes")))
 #define K_MEMORY_SIZE(mem) ((mem >= GiB_unit) ? mem / GiB_unit : ((mem >= MiB_unit) ? mem / MiB_unit : ((mem >= KiB_unit) ? mem / KiB_unit : mem)))
 
+#define ALIGN_UP(val, align)    (((val) % (align)) ? ((val) - ((val) % (align)) + (align)) : (val))
+
 extern BitmapAllocator memoryPhysicalAllocator;
 extern k_virtual_address_range_allocator virtualAddressRangeAllocator;
 

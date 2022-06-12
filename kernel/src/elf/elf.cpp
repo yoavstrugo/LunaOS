@@ -2,6 +2,8 @@
 #include <logger/logger.hpp>
 #include <stddef.h>
 #include <strings.hpp>
+#include <memory/memory.hpp>
+#include <memory/heap.hpp>
 
 bool elfCheckFile(Elf64_Ehdr *header)
 {
@@ -74,12 +76,11 @@ elf64Hash(const unsigned char *name)
     return h;
 }
 
-ELF_LOAD_STATUS elfLoad(char *fileName)
+ELF_LOAD_STATUS elfLoad(char *fileName, const char * name, k_process *proc)
 {
     // First open the file
     FIL elfFile;
     FRESULT res;
-
 
     if ((res = f_open(&elfFile, fileName, FA_READ)) != FR_OK)
     {
@@ -88,7 +89,7 @@ ELF_LOAD_STATUS elfLoad(char *fileName)
 
     unsigned int readBytes;
     uint64_t fileSize = f_size(&elfFile);
-    char fileBuffer[f_size(&elfFile)];
+    char fileBuffer[fileSize];
     res = f_read(&elfFile, (void *)fileBuffer, fileSize, &readBytes);
 
     // Validate the file
@@ -140,29 +141,40 @@ ELF_LOAD_STATUS elfLoad(char *fileName)
     // Switch to the process' space to map everything
     physical_address_t prevSpace = pagingGetCurrentSpace();
     pagingSwitchSpace(process->addressSpace);
-    char segment[10000];
     elfFile.fptr = 0;
-    // f_read(&elfFile, (void *)segment, 10000, &readBytes);
     for (int phdrI = 0; phdrI < phdrCout; phdrI++)
     {
         // Load the segments
-        
+
         if (phdrs[phdrI].p_type == PT_LOAD)
         {
             // elfFile.fptr = phdrs[phdrI].p_offset;
-            process->processAllocator->allocateSegment(phdrs[phdrI].p_vaddr, phdrs[phdrI].p_memsz);
-            
+            process->processAllocator->allocateRange(phdrs[phdrI].p_vaddr, phdrs[phdrI].p_memsz);
+
             memcpy((void *)phdrs[phdrI].p_vaddr, &fileBuffer[phdrs[phdrI].p_offset], phdrs[phdrI].p_filesz);
-        } 
-        // else {
-        //     // Skip the segment
-        //     elfFile.fptr += phdrs[phdrI].p_filesz;
-        // }
+        }
+        else if (phdrs[phdrI].p_type == PT_TLS)
+        {
+            size_t masterTLSAlignment = phdrs[phdrI].p_align;
+            size_t masterTLSCopySize = phdrs[phdrI].p_filesz;
+
+            process->masterTLS.alignment = phdrs[phdrI].p_align;;
+            process->masterTLS.actualSize = phdrs[phdrI].p_filesz;
+            process->masterTLS.totalSize = phdrs[phdrI].p_memsz;
+
+            process->masterTLS.location = (virtual_address_t)heapAllocate(process->masterTLS.actualSize);          
+
+            memset((char *)process->masterTLS.location, 0, process->masterTLS.actualSize);
+            // Copy the TLS
+            memcpy((void *)process->masterTLS.location, &fileBuffer[phdrs[phdrI].p_offset], process->masterTLS.actualSize);
+        }
     }
     pagingSwitchSpace(prevSpace);
 
     f_close(&elfFile);
 
-    taskingCreateThread(elfHeader.e_entry, process, USER);
+    // Create the process' main thread
+    k_thread *thread = taskingCreateThread(elfHeader.e_entry, process, USER);
+
     return SUCCESS;
 }

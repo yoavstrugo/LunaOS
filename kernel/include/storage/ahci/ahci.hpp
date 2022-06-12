@@ -32,8 +32,7 @@
 #define ATA_CMD_WRITE_DMA_EX    0x35
 #define ATA_CMD_IDENTIFY_DEV    0xEC
 
-#define VERBOSE_AHCI
-
+// #define VERBOSE_AHCI
 
 enum FIS_TYPE
 {

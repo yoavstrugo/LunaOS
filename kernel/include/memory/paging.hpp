@@ -20,6 +20,8 @@ const uint64_t HHDM = 0xffff800000000000;
 #define PDPT_INDEXER(add) ((add >> 30) & 0x01ff)
 #define PML4_INDEXER(add) ((add >> 39) & 0x01ff)
 
+// #define VERBOSE_PAGING
+
 // TODO: merge flags
 // FLAGS FOR A PAGE TABLE
 

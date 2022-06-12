@@ -18,9 +18,7 @@ void acpiInitialize(stivale2_struct *bootInfo)
     if (!rsdp)
         kernelPanic("%! Couldn't find RSDP", "[ACPI]");
 
-    pagingDeepDebug = true;
     acpiPrepareXSDT(rsdp);
-    pagingDeepDebug = false;
 
     for (uint32_t i = 0; i < K_XSDT_ENTRIES(xsdt); i++)
     {

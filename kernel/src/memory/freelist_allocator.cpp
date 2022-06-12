@@ -12,6 +12,9 @@ void k_freelist_allocator::init(virtual_address_t start, virtual_address_t end)
 
 void *k_freelist_allocator::allocate(uint64_t size)
 {
+    if (size == 0)
+        return NULL;
+
     k_chunk_header *curr = this->head;
     while (curr)
     {

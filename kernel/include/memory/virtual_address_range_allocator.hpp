@@ -53,7 +53,7 @@ struct k_virtual_address_range_allocator
      */
     void freeRange(virtual_address_t base);
 
-    void useRange(virtual_address_t start, uint64_t size);
+    bool useRange(virtual_address_t start, uint64_t size);
 
     /**
      * @brief Returns all the ranges of this allocator

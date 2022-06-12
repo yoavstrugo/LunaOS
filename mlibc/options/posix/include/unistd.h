@@ -132,6 +132,7 @@ extern "C" {
 #define L_ctermid 20
 
 // MISSING: intptr_t
+typedef __mlibc_intptr intptr_t;
 
 int access(const char *path, int mode);
 unsigned int alarm(unsigned int seconds);
