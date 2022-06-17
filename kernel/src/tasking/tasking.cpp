@@ -13,6 +13,7 @@
 #include <strings.hpp>
 
 static k_processor_tasking *processorTaskingArray;
+static uint8_t processorCout;
 static k_process *focusedProcess;
 
 uint64_t k_processor_tasking::getNextID()
@@ -30,6 +31,7 @@ void _idleThread()
 void taskingInitialize(uint8_t numOfCPUs)
 {
     processorTaskingArray = new k_processor_tasking[numOfCPUs];
+    processorCout = numOfCPUs;
     for (int i = 0; i < numOfCPUs; i++)
         memset((char *)processorTaskingArray, 0, numOfCPUs * sizeof(k_processor_tasking));
 
@@ -68,14 +70,35 @@ k_process *taskingCreateProcess()
     // Initialize file descriptors hash map
     process->fileDescriptors = new List<FIL *>(3);
 
-    FIL *stdin = new FIL();
-    f_open(stdin, "/root/dev/stdin", FA_READ | FA_WRITE | FA_OPEN_APPEND);
-    process->fileDescriptors->add(stdin); // stdin
+    
 
-    FIL *stdout = new FIL();
-    f_open(stdout, "/root/dev/stdout", FA_WRITE | FA_OPEN_APPEND);
-    process->fileDescriptors->add(stdout); // stdout
-    process->fileDescriptors->add(stdout); // stderr
+    f_chdir("/root");
+    f_mkdir("proc");
+    f_chdir("proc");
+    char pidStr[10];
+    sprintf(pidStr, "%d", process->pid);
+    f_mkdir(pidStr);
+    f_chdir(pidStr);
+    f_mkdir("fd");
+    f_chdir("fd");
+    
+    if (f_open(&process->stdin, "0", FA_READ | FA_WRITE | FA_CREATE_ALWAYS) != FR_OK)
+        return NULL;
+
+    process->fileDescriptors->add(&process->stdin); // stdin
+    process->stdinWritePtr = 0;
+
+    if (f_open(&process->stdout, "1", FA_READ | FA_WRITE | FA_CREATE_ALWAYS) != FR_OK)
+        return NULL;
+    process->fileDescriptors->add(&process->stdout); // stdin
+
+    if (f_open(&process->stderr, "2", FA_READ | FA_WRITE | FA_CREATE_ALWAYS) != FR_OK)
+        return NULL;
+    process->fileDescriptors->add(&process->stderr); // stdin
+
+
+    f_chdir("/");
+
 
     return process;
 }
@@ -263,4 +286,22 @@ k_process *taskingGetFocusedProcess()
 
 void taskingSetFocusedProcess(k_process *proc) {
     focusedProcess = proc;
+}
+
+void taskingFinalize() {
+    for (uint8_t processorI = 0; processorI < processorCout; processorI++)
+    {
+        k_processor_tasking processor = processorTaskingArray[processorI];
+        k_process_entry *entry = processor.processes;
+        while (entry)
+        {
+            k_process *process = entry->process;
+            uint8_t fd;
+            for (uint8_t fd = 0; fd < process->fileDescriptors->size(); fd++)
+                f_close(process->fileDescriptors->get(fd));
+            
+            entry = entry->next;
+        }
+    }
+    
 }

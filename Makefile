@@ -24,7 +24,27 @@ QEMU_CORES 		= 1
 QEMU_MEM		= 1.5G
 QEMU_CPU		= qemu64
 QEMU_MACHINE 	= q35
-QEMU_TRACE		= -d int
+# QEMU_TRACE		= --trace "ps2_keyboard_event*" 
+QEMU_TRACE		= --trace "ahci_port_read*" 
+QEMU_TRACE		= --trace "ahci_port_write	*" 
+QEMU_TRACE	   += --trace "ahci_port_read_default*" 
+QEMU_TRACE	   += --trace "ahci_mem_read*" 
+QEMU_TRACE	   += --trace "ahci_mem_write*" 
+QEMU_TRACE	   += --trace "ahci_mem_write*" 
+QEMU_TRACE	   += --trace "ahci_reset_port*" 
+QEMU_TRACE	   += --trace "ahci_cmd_done*" 
+QEMU_TRACE	   += --trace "handle_reg_h2d_fis_dump*" 
+# QEMU_TRACE	   += --trace "ps2_read_data*" 
+# QEMU_TRACE	   += --trace "ps2_kbd_init*" 
+# QEMU_TRACE	   += --trace "ps2_write_keyboard*" 
+# QEMU_TRACE	   += --trace "lasips2_reg_read*" 
+# QEMU_TRACE	   += --trace "lasips2_reg_write*" 
+# QEMU_TRACE	   += --trace "lasips2_reg_intr*" 
+# QEMU_TRACE	   += --trace "ps2_put_keycode*" 
+# QEMU_TRACE	   += --trace "ps2_keyboard_set_translation*" 
+# QEMU_TRACE	   += --trace "ps2_kbd_reset" 
+# QEMU_TRACE	   += -d int 
+
 QEMU_FLAGS 	= -m ${QEMU_MEM} -cpu ${QEMU_CPU} -smp ${QEMU_CORES} -M ${QEMU_MACHINE} -net none -drive file=./os-disk.img -M smm=off ${QEMU_TRACE} -D qemu.log
 
 .PHONY: buildimg

@@ -162,7 +162,7 @@ void kernelInitialize(stivale2_struct *stivaleInfo)
 
     taskingSetFocusedProcess(proc);
 
-    // lapicStartTimer();
+    lapicStartTimer();
 }
 
 void kernelPanic(const char *msg, ...)
@@ -172,6 +172,8 @@ void kernelPanic(const char *msg, ...)
     va_start(valist, msg);
     loggerPrintDirect(msg, valist);
     va_end(valist);
+
+    taskingFinalize();
 
     interruptsDisable();
 

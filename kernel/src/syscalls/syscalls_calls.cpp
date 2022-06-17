@@ -149,7 +149,9 @@ namespace Syscall::Calls
     void tcbSet(k_thread *thread, TCBSetData *data)
     {
         // fs_base MSR
-        processorSetMSR(0xC0000100, (virtual_address_t)data->pointer);
+        // processorSetMSR(0xC0000100, (virtual_address_t)data->pointer);
+        // thread->context->fs_base = (register_t)data->pointer;
+        thread->tls.userThread = (virtual_address_t)data->pointer;
         data->result = true;
     }
 

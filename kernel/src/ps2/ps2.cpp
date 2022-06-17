@@ -32,7 +32,7 @@ namespace PS2
     {
         int timeout = 10000;
         while (timeout--)
-            if (ioInByte(PS2_PORT_STATUS) & (OUTPUT_BUFFER_STATUS | 0x20) != 0x1)
+            if (!(ioInByte(PS2_PORT_STATUS) & 0x1))
                 return;
     }
 
@@ -40,7 +40,7 @@ namespace PS2
     {
         int timeout = 10000;
         while (timeout--)
-            if (ioInByte(PS2_PORT_STATUS) & INPUT_BUFFER_STATUS != 0x2)
+            if (!(ioInByte(PS2_PORT_STATUS) & 0x2))
                 return;
     }
 
@@ -74,46 +74,31 @@ namespace PS2
 
     bool initialize()
     {
-#ifdef VERBOSE_PS2
-        logDebugn("%! initializing", "[PS2]");
-#endif
-        // if (!doesPS2Exist())
-        // {
-        //     kernelPanic("%! PS2 controller does not exist on the system!", "[PS2]");
-        //     __builtin_trap();
-        // }
-
         // Disable devices
         waitSignal();
         ioOutByte(PS2_PORT_COMMAND, PS2_CMD_DISABLE_FIRST_PORT);
         waitSignal();
         ioOutByte(PS2_PORT_COMMAND, PS2_CMD_DISABLE_SECOND_PORT);
-#ifdef VERBOSE_PS2
-        logDebugn("%! Disabled devices", "[PS2]");
-#endif
 
         // Flush output buffer
-        while (ioInByte(PS2_PORT_STATUS) & OUTPUT_BUFFER_STATUS)
+        while (ioInByte(PS2_PORT_STATUS) & 0x1)
             ioInByte(PS2_PORT_DATA);
-
-#ifdef VERBOSE_PS2
-        logDebugn("%! flushed", "[PS2]");
-#endif
 
         waitSignal();
         ioOutByte(PS2_PORT_COMMAND, PS2_CMD_READ_CONFIGURATION_BYTE);
+        
         waitData();
-        uint8_t confByte = pollRead(PS2_PORT_DATA);
-        confByte = ((confByte & ~ 0x30) | 3);
+        uint8_t confByte = ioInByte(PS2_PORT_DATA);
+        confByte |= FIRST_PORT_INTERRUPT;
+        confByte |= SECOND_PORT_INTERRUPT;
+        confByte |= SECOND_PORT_CLOCK;
+        confByte |= FIRST_PORT_TRANSLATION;
+
         waitSignal();
         ioOutByte(PS2_PORT_COMMAND, PS2_CMD_WRITE_CONFIGURATION_BYTE);
+
         waitSignal();
         ioOutByte(PS2_PORT_DATA, confByte);
-        waitData();
-        ioInByte(PS2_PORT_DATA);
-
-        // pitPrepareSleep(1000000);
-        // pitPerformSleep();
 
         // waitSignal();
         // executeCommand(0xF6);
@@ -124,10 +109,24 @@ namespace PS2
 #ifdef VERBOSE_PS2
         logDebugn("%! reconfigured", "[PS2]");
 #endif
+        // Enable both ports
+        waitSignal();
+        ioOutByte(PS2_PORT_COMMAND, PS2_CMD_ENABLE_FIRST_PORT);
+        waitSignal();
+        ioOutByte(PS2_PORT_COMMAND, PS2_CMD_ENABLE_SECOND_PORT);
 
-        // Set scancode
-        // executeCommand(0xF0);
-        // executeCommand(1);
+        // Enable scanning
+        // waitSignal();
+        // ioOutByte(PS2_PORT_COMMAND, 0xF0);
+        // ioOutByte(PS2_PORT_DATA, 1);
+        // waitData();
+        // uint8_t res = ioInByte(PS2_PORT_DATA);
+
+        // waitSignal();
+        // ioOutByte(PS2_PORT_DATA, 1);
+        // waitData();
+        // res = ioInByte(PS2_PORT_DATA);
+        // logInfo("%d", res);
 
 #ifdef VERBOSE_PS2
         logDebugn("%! initialized", "[PS2]");
@@ -157,10 +156,17 @@ namespace PS2
             if (key < 0x37) {
                 k_process *focusedProcess = taskingGetFocusedProcess();
                 if (focusedProcess != NULL) {
-                    FIL *stdin = focusedProcess->fileDescriptors->get(0);
-                    unsigned int byteWritten;
-                    FRESULT res  = f_write(stdin, &QWERTY::scancode1[key], 1, &byteWritten);
-                    res = res;
+                    FIL *stdin = &focusedProcess->stdin;
+                    long stdinReadPtr = f_tell(stdin);
+
+                    f_lseek(stdin, focusedProcess->stdinWritePtr);
+                    unsigned int bytesWritten;
+                    FRESULT res  = f_write(stdin, &QWERTY::scancode1[key], 1, &bytesWritten);
+
+                    focusedProcess->stdinWritePtr += bytesWritten;
+                    f_lseek(stdin, stdinReadPtr);
+
+                    logInfo("%c", QWERTY::scancode1[key]);
                 }
             }
     }

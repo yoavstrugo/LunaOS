@@ -197,6 +197,13 @@ struct k_process
         size_t userThreadOffset;
     } masterTLS;
 
+    FIL stdin;
+    long stdinWritePtr;
+
+    FIL stdout;
+
+    FIL stderr;
+
     List<FIL *> *fileDescriptors;
 };
 
@@ -307,3 +314,9 @@ k_processor_tasking *taskingGetProcessor();
  * @param thread The thread
  */
 void taskingSetupPrivileges(k_thread *thread);
+
+/**
+ * @brief Tries to close all the process file descriptors.
+ * 
+ */
+void taskingFinalize();

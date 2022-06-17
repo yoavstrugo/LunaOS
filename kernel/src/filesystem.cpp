@@ -87,11 +87,5 @@ void filesystemInitialize()
     f_mkdir("root/docs");
     f_mkdir("root/dev");
     
-    FIL fil;
-
-    f_open(&fil, "/root/dev/stdin", FA_OPEN_ALWAYS);
-    f_close(&fil);
-    f_open(&fil, "/root/dev/stdout", FA_OPEN_ALWAYS);
-    f_close(&fil);
     scan_files("/root");
 }
