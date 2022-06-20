@@ -197,14 +197,18 @@ struct k_process
         size_t userThreadOffset;
     } masterTLS;
 
+    char cwd[256];
+
     FIL stdin;
     long stdinWritePtr;
 
     FIL stdout;
+    long stdoutReadPtr;
 
     FIL stderr;
 
     List<FIL *> *fileDescriptors;
+    List<DIR *> *openDirectories;
 };
 
 /**

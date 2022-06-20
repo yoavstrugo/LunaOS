@@ -42,6 +42,8 @@ struct k_userspace_allocator
      */
     physical_address_t getSpace();
 
+    void copyTo(k_userspace_allocator *);
+
     /**
      * @brief Frees all the allocated memory in this allocator
      * 

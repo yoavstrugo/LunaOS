@@ -12,7 +12,7 @@
 
 uintptr_t libraryBase = 0x41000000;
 
-bool verbose = true;
+bool verbose = false;
 bool stillSlightlyVerbose = false;
 bool logBaseAddresses = false;
 bool eagerBinding = true;

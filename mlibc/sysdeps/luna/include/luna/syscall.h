@@ -42,6 +42,8 @@
 #define SYS_CLOSE 33
 #define SYS_READ 34
 #define SYS_WRITE 35
+#define SYS_READDIR 36
+#define SYS_OPENDIR 37
 
 #define SYS_DEBUG 255
 
@@ -86,6 +88,20 @@ namespace Luna
     {
         bool result;
         int err;
+    };
+
+    struct ReadDir : SyscallData
+    {
+        unsigned int fd;
+        unsigned int inode;
+        const char *name;
+        const char *type;
+    };
+
+    struct OpenDir : SyscallData
+    {
+        unsigned int fd;
+        const char *path;
     };
 
     struct DebugData : SyscallData
@@ -239,6 +255,12 @@ namespace Luna
     {
         time_t *secs;
         long *nanos;
+    };
+
+    struct GetCWDData : SyscallData
+    {
+        char *cwd;
+        size_t size;
     };
 
     static inline void syscall(unsigned long long call, SyscallData *data)

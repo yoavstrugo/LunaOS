@@ -20,6 +20,7 @@ class Renderer
 public:
     void initializeRenderer(stivale2_struct_tag_framebuffer *framebuffer, PSF_Font *font);
     void printf(const char *format, va_list arg);
+    void backspace();
 
     // Print a character
     void putchar(unsigned short int c);
@@ -36,6 +37,7 @@ private:
 
     void scrollUp();
     void _advanceCursor();
+    void _retreatCursor();
     void _moveCursorDown();
     void _print(const char *str);
 

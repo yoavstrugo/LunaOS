@@ -249,6 +249,22 @@ virtual_address_t k_userspace_allocator::allocateInterruptStack(uint64_t stackSi
     return stackPtr - sizeof(uint64_t);
 }
 
+void k_userspace_allocator::copyTo(k_userspace_allocator *target)
+{
+    k_address_range_header *range = this->memoryAllocator->getRanges();
+    while (range)
+    {
+        if (range->used)
+        {
+            target->allocateStack(range->base, range->pages * PAGE_SIZE);
+        }
+        range = range->next;
+    }
+
+    virtual_address_t stackPtr;
+    k_paging_flags flags;
+}
+
 bool k_userspace_allocator::allocateRange(virtual_address_t start, uint64_t size) {
     virtual_address_t startAligned = PAGING_ALIGN_PAGE_DOWN(start);
     virtual_address_t endAligned   = PAGING_ALIGN_PAGE_UP(start + size);

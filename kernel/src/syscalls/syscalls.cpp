@@ -110,5 +110,8 @@ namespace Syscall
         registerHandler(SYS_CLOSE, (SyscallHandler_t)Calls::close);
         registerHandler(SYS_READ, (SyscallHandler_t)Calls::read);
         registerHandler(SYS_WRITE, (SyscallHandler_t)Calls::write);
+        registerHandler(SYS_READDIR, (SyscallHandler_t)Calls::readDir);
+        registerHandler(SYS_OPENDIR, (SyscallHandler_t)Calls::openDir);
+        registerHandler(254, (SyscallHandler_t)Calls::printSTDOUT);
     }
 }

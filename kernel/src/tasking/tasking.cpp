@@ -53,11 +53,9 @@ k_process *taskingCreateProcess()
 {
     k_process *process = new k_process();
 
-    // 2 MiB for code, should change to ELF size
-    uint64_t codeSize = 2 * MiB_unit;
     process->processAllocator = new k_userspace_allocator();
     // process->processAllocator->allocateUserspaceCode(codeSize);
-    process->processAllocator->allocateUserspaceHeap();
+    // process->processAllocator->allocateUserspaceHeap();
     process->addressSpace = process->processAllocator->getSpace();
 
     process->pid = processorTaskingArray[0].getNextID();
@@ -67,8 +65,10 @@ k_process *taskingCreateProcess()
     entry->next = taskingGetProcessor()->processes;
     taskingGetProcessor()->processes = entry;
 
+    process->openDirectories = new List<DIR *>(5);
+
     // Initialize file descriptors hash map
-    process->fileDescriptors = new List<FIL *>(3);
+    process->fileDescriptors = new List<FIL *>(5);
 
     
 
@@ -99,8 +99,27 @@ k_process *taskingCreateProcess()
 
     f_chdir("/");
 
+    memcpy(process->cwd, "/root\0", 6);
+
 
     return process;
+}
+
+k_process *taskingDuplicateProcess(k_process *parent) {
+    k_process *child = new k_process();
+
+    child->processAllocator = new k_userspace_allocator();
+    child->addressSpace = child->processAllocator->getSpace();
+    child->pid = processorTaskingArray[0].getNextID();
+
+    k_process_entry *entry = new k_process_entry();
+    entry->process = child;
+    entry->next = taskingGetProcessor()->processes;
+    taskingGetProcessor()->processes = entry;
+
+    // Copy from parent to child
+    // Copy memory of parent
+    // k_address_range_header *range = parent->processAllocator->copyTo(child->processAllocator);
 }
 
 void taskingInitializeThreadMemory(k_thread *thread, THREAD_PRIVILEGE privilege)
@@ -186,6 +205,8 @@ void taskingAddThreadToProcess(k_thread *thread, k_process *process)
         thread->id = taskingGetProcessor()->getNextID();
     }
 }
+
+
 
 k_thread *taskingCreateThread(virtual_address_t entryPoint, k_process *process, THREAD_PRIVILEGE privilege)
 {

@@ -11,6 +11,8 @@
 
 #include <tasking/tasking.hpp>
 
+#include <strings.hpp>
+
 namespace PS2
 {
     static bool isInitialized = false;
@@ -50,10 +52,11 @@ namespace PS2
         //     ;
         int limit = 3;
         uint8_t response;
-        do {
-        ioOutByte(PS2_PORT_COMMAND, command);
-        waitData();
-        response = ioInByte(PS2_PORT_DATA);
+        do
+        {
+            ioOutByte(PS2_PORT_COMMAND, command);
+            waitData();
+            response = ioInByte(PS2_PORT_DATA);
         } while (response == 0xFE && (limit--) > 0);
 
         return response;
@@ -86,7 +89,7 @@ namespace PS2
 
         waitSignal();
         ioOutByte(PS2_PORT_COMMAND, PS2_CMD_READ_CONFIGURATION_BYTE);
-        
+
         waitData();
         uint8_t confByte = ioInByte(PS2_PORT_DATA);
         confByte |= FIRST_PORT_INTERRUPT;
@@ -104,7 +107,6 @@ namespace PS2
         // executeCommand(0xF6);
         // waitSignal();
         // executeCommand(0xF4);
-
 
 #ifdef VERBOSE_PS2
         logDebugn("%! reconfigured", "[PS2]");
@@ -136,13 +138,21 @@ namespace PS2
     namespace QWERTY
     {
         unsigned char scancode1[] = {
-            0,  0x1b, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
-            '-', '=', 0x8, 0x9, 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I',
-            'O', 'P', '[', ']', '\n',  0, 'A', 'S', 'D', 'F', 'G', 'H',
-            'J', 'K', 'L', ';', '\'', '`', 0, '\\', 'Z', 'X', 'C', 'V',
-            'B', 'N', 'M', ',', '.', '/', 0,  '*'
-        };
+            0, 0x1b, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+            '-', '=', 0x8, '\t', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i',
+            'o', 'p', '[', ']', '\n', 0, 'a', 's', 'd', 'f', 'g', 'h',
+            'j', 'k', 'l', ';', '\'', '`', 0, '\\', 'z', 'x', 'c', 'v',
+            'b', 'n', 'm', ',', '.', '/', 0, '*', 0, ' '};
+
+        unsigned char scancode1Shift[] = {
+            0, 0x1b, '!', '@', '#', '$', '%', '^', '&', '*', '(', ')',
+            '_', '+', 0x8, '\t', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I',
+            'O', 'P', '{', '}', '\n', 0, 'A', 'S', 'D', 'F', 'G', 'H',
+            'J', 'K', 'L', ':', '\"', '~', 0, '|', 'Z', 'X', 'C', 'V',
+            'B', 'N', 'M', '<', '>', '?', 0, '*', 0, ' '};
     }
+
+    bool leftShift;
 
     void keyboardHandler(uint64_t)
     {
@@ -150,23 +160,38 @@ namespace PS2
             return; // wait for buffer
 
         uint8_t key = ioInByte(PS2_PORT_DATA);
+
+        if (key == 0xAA)
+        {
+            leftShift = false;
+            return;
+        }
+
+        if (key == 0x2A)
+        {
+            leftShift = true;
+            return;
+        }
+
         // Do not count key release
         if (key < 0x81)
+
             // Only implemented keys
-            if (key < 0x37) {
+            if (key < 0x40)
+            {
                 k_process *focusedProcess = taskingGetFocusedProcess();
-                if (focusedProcess != NULL) {
+                if (focusedProcess != NULL)
+                {
                     FIL *stdin = &focusedProcess->stdin;
                     long stdinReadPtr = f_tell(stdin);
 
                     f_lseek(stdin, focusedProcess->stdinWritePtr);
                     unsigned int bytesWritten;
-                    FRESULT res  = f_write(stdin, &QWERTY::scancode1[key], 1, &bytesWritten);
+                    char c = leftShift ? QWERTY::scancode1Shift[key] : QWERTY::scancode1[key];
+                    FRESULT res = f_write(stdin, &c, 1, &bytesWritten);
 
                     focusedProcess->stdinWritePtr += bytesWritten;
                     f_lseek(stdin, stdinReadPtr);
-
-                    logInfo("%c", QWERTY::scancode1[key]);
                 }
             }
     }

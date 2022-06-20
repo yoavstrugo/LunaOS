@@ -87,5 +87,5 @@ void filesystemInitialize()
     f_mkdir("root/docs");
     f_mkdir("root/dev");
     
-    scan_files("/root");
+    // scan_files("/root");
 }

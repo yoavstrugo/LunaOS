@@ -7,6 +7,7 @@
 #include <mlibc/thread-entry.hpp>
 #include <errno.h>
 #include <sys/resource.h>
+#include <dirent.h>
 
 int ff_get_errno(FRESULT res)
 {
@@ -40,7 +41,7 @@ namespace mlibc
     {
         Luna::DebugData data;
         data.message = msg;
-        Luna::syscall(SYS_DEBUG, &data);
+        // Luna::syscall(SYS_DEBUG, &data);
     }
 
     void sys_libc_panic()
@@ -89,6 +90,59 @@ namespace mlibc
         // errno = data.err;
         return -1;
     }
+
+    int sys_open_dir(const char *path, int *handle)
+    {
+        Luna::OpenDir data;
+        data.path = path;
+        Luna::syscall(SYS_OPENDIR, &data);
+
+        if (data.result)
+        {
+            *handle = data.fd;
+            return 0;
+        }
+        return -1;
+    }
+
+    int sys_read_entries(int handle, void *buffer, size_t max_size, size_t *bytes_read)
+    {
+        Luna::ReadDir data;
+        data.fd = handle;
+        Luna::syscall(SYS_READDIR, &data);
+
+        if (data.result)
+        {
+            dirent *dir = (dirent *)buffer;
+            if (data.name[0] == '\0')
+            {
+                *bytes_read = 0;
+                return 0;
+            }
+
+            strcpy(dir->d_name, data.name);
+            dir->d_ino = 1;
+            dir->d_off = 0;
+            dir->d_reclen = sizeof(dirent);
+            dir->d_type = 0;
+
+            *bytes_read = sizeof(dirent);
+            return 0;
+        }
+
+        return -1;
+    }
+
+    // int sys_fork(pid_t *child)
+    // {
+    //     Luna::ForkData data;
+    //     Luna::syscall(SYS_FORK, &data);
+    // }
+
+    // int mlibc::sys_execve(const char *path, char *const *argv, char *const *envp)
+    // {
+
+    // }
 
     int sys_close(int fd)
     {
@@ -220,6 +274,27 @@ namespace mlibc
         return -1;
     }
 
+    int sys_getcwd(char *buffer, size_t size)
+    {
+        Luna::GetCWDData data;
+        data.cwd = buffer;
+        data.size = size;
+        Luna::syscall(SYS_GETCWD, &data);
+        if (data.result)
+            return 0;
+        return -1;
+    }
+
+    int sys_chdir(const char *path)
+    {
+        Luna::ChdirData data;
+        data.path = path;
+        Luna::syscall(SYS_CHDIR, &data);
+        if (data.result)
+            return 0;
+        return -1;
+    }
+
     void sys_exit(int signal)
     {
         Luna::ExitData data;
@@ -229,5 +304,4 @@ namespace mlibc
         return;
     }
 
-    
 }

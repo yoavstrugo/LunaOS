@@ -155,7 +155,7 @@ void kernelInitialize(stivale2_struct *stivaleInfo)
 
     ELF_LOAD_STATUS status;
     k_process *proc;
-    if ((status = elfLoad("root/apps/test.elf", (const char*)"heyo", &proc)) == SUCCESS)
+    if ((status = elfLoad("root/apps/shell.elf", (const char*)"heyo", &proc)) == SUCCESS)
         logInfon("SUCCESS");
     else
         logInfon("FAILED %d", status);

@@ -22,6 +22,12 @@ namespace Syscall
         int errno;
     };
 
+    struct OpenDir : SyscallData
+    {
+        unsigned int fd;
+        const char *path;
+    };
+
     struct DebugData : SyscallData
     {
         const char *message;
@@ -89,6 +95,20 @@ namespace Syscall
 
         // To set
         unsigned int byteRead;
+    };
+
+    struct GetCWDData : SyscallData
+    {
+        char *cwd;
+        size_t size;
+    };
+
+    struct ReadDir : SyscallData
+    {
+        unsigned int fd;
+        unsigned int inode;
+        const char *name;
+        const char *type;
     };
 
     struct CloneData : SyscallData

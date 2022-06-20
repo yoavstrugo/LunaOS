@@ -124,6 +124,13 @@ void memset(unsigned char *addr, char value, size_t len)
     }
 }
 
+char tolower(char c)
+{
+    if (c >= 'A' && c <= 'Z')
+        return c - 'A' + 'a';
+    return c;
+}
+
 size_t strlen(const char *str)
 {
     register const char *s;

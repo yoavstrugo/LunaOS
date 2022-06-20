@@ -5,10 +5,84 @@
 #include <fatfs/ff.h>
 #include <memory/heap.hpp>
 #include <system/processor/processor.hpp>
+#include <strings.hpp>
 
 namespace Syscall::Calls
 {
-    void debug(k_thread *thread, DebugData *data) 
+    void printSTDOUT(k_thread *thread, SyscallData *data)
+    {
+        // 1 is for STDOUT
+        FIL *stdout = thread->process->fileDescriptors->get(1);
+        long prevPtr = f_tell(stdout);
+        f_lseek(stdout, thread->process->stdoutReadPtr);
+        size_t size = f_size(stdout) - thread->process->stdoutReadPtr;
+        char buf[size + 1];
+        unsigned int bw;
+        f_read(stdout, buf, size, &bw);
+        buf[size] = '\0';
+
+        thread->process->stdoutReadPtr += bw;
+        f_lseek(stdout, prevPtr);
+
+        logInfo("%s", buf);
+    }
+
+    void readDir(k_thread *thread, ReadDir *data)
+    {
+        DIR *dir = thread->process->openDirectories->get(data->fd);
+        FILINFO info;
+        if (dir != NULL)
+        {
+            if (f_readdir(dir, &info) == FR_OK)
+            {
+                memcpy((void *)data->name, (void *)info.fname, strlen(info.fname));
+                data->result = true;
+                return;
+            }
+
+            data->result = false;
+        }
+        data->result = false;
+    }
+
+    void openDir(k_thread *thread, OpenDir *data)
+    {
+        DIR *dir = new DIR();
+        FRESULT res = f_opendir(dir, data->path);
+        if (res == FR_OK)
+        {
+            thread->process->openDirectories->add(dir);
+            data->fd = thread->process->openDirectories->size() - 1;
+            data->result = true;
+        }
+        else
+        {
+            data->result = false;
+        }
+    }
+
+    void getcwd(k_thread *thread, GetCWDData *data)
+    {
+        memcpy((void *)data->cwd, (void *)thread->process->cwd, 256);
+        data->result = true;
+    }
+
+    void chdir(k_thread *thread, ChdirData *data)
+    {
+        FILINFO filInfo;
+        FRESULT res = f_stat(data->path, &filInfo);
+        if (res == FR_OK)
+        {
+            memcpy((void *)thread->process->cwd, (void *)data->path, 256);
+            data->result = true;
+        }
+        else
+        {
+            data->result = false;
+        }
+    }
+
+    void debug(k_thread *thread, DebugData *data)
     {
         logDebugn("%s", data->message);
         data->result = true;
@@ -79,7 +153,7 @@ namespace Syscall::Calls
         FRESULT res = f_write(fil, data->buf, data->btw, (unsigned int *)data->bw);
         if (res == FR_OK)
             data->result = true;
-        else 
+        else
             data->result = false;
         return;
     }
@@ -206,20 +280,6 @@ namespace Syscall::Calls
     void clockGet(k_thread *thread, ClockGetData *data)
     {
         logInfon("'clock_get' syscall not implemented");
-        data->result = false;
-        data->errno = ENOSYS;
-    }
-
-    void getcwd(k_thread *thread, SyscallData *data)
-    {
-        logInfon("'getcwd' syscall not implemented");
-        data->result = false;
-        data->errno = ENOSYS;
-    }
-
-    void chdir(k_thread *thread, ChdirData *data)
-    {
-        logInfon("'chdir' syscall not implemented");
         data->result = false;
         data->errno = ENOSYS;
     }

@@ -5,7 +5,7 @@
 
 #include <logger/logger.hpp>
 
-#define VERBOSE_SCHEDULER
+// #define VERBOSE_SCHEDULER
 
 k_jobs_queue jobsQueues[K_CONST_SCHEDULER_QUEUES];
 k_scheduler_job *runningJob;

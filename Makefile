@@ -128,7 +128,7 @@ copytohost: buildiso
 
 .PHONY: createdisk
 createdisk:
-	@dd if=/dev/zero of=os-disk.img bs=1024 count=2048 2>/dev/null
+	@dd if=/dev/zero of=os-disk.img bs=1024 count=32762 2>/dev/null
 	@sudo chmod o+rwx ./os-disk.img
 
 .PHONY: mountdisk

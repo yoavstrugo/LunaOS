@@ -31,6 +31,13 @@ void Renderer::scrollUp()
     this->cursor.Y -= this->font->header()->height;
 }
 
+void Renderer::backspace()
+{
+    // Check special cases
+    this->cursor.X -= this->font->header()->width;
+    this->_insert_char(' ', this->cursor.X, this->cursor.Y);
+}
+
 void Renderer::printf(const char *format, va_list arg)
 {
     uint64_t i;
@@ -147,6 +154,9 @@ void Renderer::putchar(unsigned short int c)
         {
             scrollUp();
         }
+        return;
+    case 0x8:
+        this->backspace();
         return;
     case '\t':
         // Horizontal tab

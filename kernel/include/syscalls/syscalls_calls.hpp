@@ -39,6 +39,8 @@
 #define SYS_CLOSE 33
 #define SYS_READ 34
 #define SYS_WRITE 35
+#define SYS_READDIR 36
+#define SYS_OPENDIR 37
 
 #define SYS_DEBUG 255
 
@@ -46,6 +48,18 @@ namespace Syscall
 {
     namespace Calls
     {
+        void
+        readDir(k_thread *thread, ReadDir *data);
+
+        void
+        openDir(k_thread *thread, OpenDir *data);
+
+        void 
+        printSTDOUT(k_thread *thread, SyscallData *data); 
+
+        void
+        removeLastChar(k_thread *thread, SyscallData *data);
+
         void 
         debug(k_thread *thread, DebugData *data); 
 
@@ -134,7 +148,7 @@ namespace Syscall
         clockGet(k_thread *thread, ClockGetData *data);
 
         void
-        getcwd(k_thread *thread, SyscallData *data);
+        getcwd(k_thread *thread, GetCWDData *data);
 
         void
         chdir(k_thread *thread, ChdirData *data);

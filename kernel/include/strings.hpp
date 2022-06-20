@@ -19,6 +19,8 @@ void memset(void *addr, char value, size_t len);
 
 size_t strlen(const char *str);
 
+char tolower(char c);
+
 const char *toString(uint8_t num);
 const char *toString(uint16_t num);
 const char *toString(uint32_t num);
